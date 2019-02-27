@@ -102,10 +102,9 @@ class Version(object):
 
     def next_patch(self):
         if self.prerelease:
-            return Version.parse('.'.join(str(x) for x in [self.major, self.minor, self.patch]))
+            return Version(self.major, self.minor, self.patch)
         else:
-            return Version.parse(
-                '.'.join(str(x) for x in [self.major, self.minor, self.patch + 1]))
+            return Version(self.major, self.minor, self.patch + 1)
 
     @classmethod
     def coerce(cls, version_string, partial=False):
