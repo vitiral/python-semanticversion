@@ -150,21 +150,21 @@ class VersionTestCase(unittest.TestCase):
 
     def test_parsing(self):
         for text, expected_fields in self.versions.items():
-            version = base.Version(text)
+            version = base.Version.parse(text)
             actual_fields = (version.major, version.minor, version.patch,
                 version.prerelease, version.build)
             self.assertEqual(expected_fields, actual_fields)
 
     def test_str(self):
         for text in self.versions:
-            version = base.Version(text)
+            version = base.Version.parse(text)
             self.assertEqual(text, str(version))
-            self.assertEqual("Version('%s')" % text, repr(version))
+            self.assertEqual("Version.parse('%s')" % text, repr(version))
 
     def test_compare_to_self(self):
         for text in self.versions:
-            self.assertEqual(base.Version(text), base.Version(text))
-            self.assertNotEqual(text, base.Version(text))
+            self.assertEqual(base.Version.parse(text), base.Version.parse(text))
+            self.assertNotEqual(text, base.Version.parse(text))
 
     partial_versions = {
         '1.1': (1, 1, None, None, None),
@@ -192,7 +192,7 @@ class VersionTestCase(unittest.TestCase):
 
     def test_parsing_partials(self):
         for text, expected_fields in self.partial_versions.items():
-            version = base.Version(text, partial=True)
+            version = base.Version.parse(text, partial=True)
             actual_fields = (version.major, version.minor, version.patch,
                 version.prerelease, version.build)
             self.assertEqual(expected_fields, actual_fields)
@@ -200,35 +200,35 @@ class VersionTestCase(unittest.TestCase):
 
     def test_str_partials(self):
         for text in self.partial_versions:
-            version = base.Version(text, partial=True)
+            version = base.Version.parse(text, partial=True)
             self.assertEqual(text, str(version))
-            self.assertEqual("Version('%s', partial=True)" % text, repr(version))
+            self.assertEqual("Version.parse('%s', partial=True)" % text, repr(version))
 
     def test_compare_partial_to_self(self):
         for text in self.partial_versions:
             self.assertEqual(
-                base.Version(text, partial=True),
-                base.Version(text, partial=True))
-            self.assertNotEqual(text, base.Version(text, partial=True))
+                base.Version.parse(text, partial=True),
+                base.Version.parse(text, partial=True))
+            self.assertNotEqual(text, base.Version.parse(text, partial=True))
 
     def test_hash(self):
         self.assertEqual(1,
-            len(set([base.Version('0.1.0'), base.Version('0.1.0')])))
+            len(set([base.Version.parse('0.1.0'), base.Version.parse('0.1.0')])))
 
         self.assertEqual(2,
-            len(set([base.Version('0.1.0'), base.Version('0.1.0', partial=True)])))
+            len(set([base.Version.parse('0.1.0'), base.Version.parse('0.1.0', partial=True)])))
 
         # A fully-defined 'partial' version isn't actually partial.
         self.assertEqual(1,
             len(set([
-                base.Version('0.1.0-a1+34'),
-                base.Version('0.1.0-a1+34', partial=True)
+                base.Version.parse('0.1.0-a1+34'),
+                base.Version.parse('0.1.0-a1+34', partial=True)
             ]))
         )
 
     @unittest.skipIf(is_python2, "Comparisons to other objects are broken in Py2.")
     def test_invalid_comparisons(self):
-        v = base.Version('0.1.0')
+        v = base.Version.parse('0.1.0')
         with self.assertRaises(TypeError):
             v < '0.1.0'
         with self.assertRaises(TypeError):
@@ -245,7 +245,7 @@ class VersionTestCase(unittest.TestCase):
         # We Test each property explicitly as the == comparator for versions
         # does not distinguish between prerelease or builds for equality.
 
-        v = base.Version('1.0.0+build')
+        v = base.Version.parse('1.0.0+build')
         v = v.next_major()
         self.assertEqual(v.major, 2)
         self.assertEqual(v.minor, 0)
@@ -253,7 +253,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.0+build')
+        v = base.Version.parse('1.0.0+build')
         v = v.next_minor()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 1)
@@ -261,7 +261,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.0+build')
+        v = base.Version.parse('1.0.0+build')
         v = v.next_patch()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 0)
@@ -269,7 +269,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.1.0+build')
+        v = base.Version.parse('1.1.0+build')
         v = v.next_major()
         self.assertEqual(v.major, 2)
         self.assertEqual(v.minor, 0)
@@ -277,7 +277,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.1.0+build')
+        v = base.Version.parse('1.1.0+build')
         v = v.next_minor()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 2)
@@ -285,7 +285,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.1.0+build')
+        v = base.Version.parse('1.1.0+build')
         v = v.next_patch()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 1)
@@ -293,7 +293,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.1+build')
+        v = base.Version.parse('1.0.1+build')
         v = v.next_major()
         self.assertEqual(v.major, 2)
         self.assertEqual(v.minor, 0)
@@ -301,7 +301,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.1+build')
+        v = base.Version.parse('1.0.1+build')
         v = v.next_minor()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 1)
@@ -309,7 +309,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.1+build')
+        v = base.Version.parse('1.0.1+build')
         v = v.next_patch()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 0)
@@ -321,7 +321,7 @@ class VersionTestCase(unittest.TestCase):
         # We Test each property explicitly as the == comparator for versions
         # does not distinguish between prerelease or builds for equality.
 
-        v = base.Version('1.0.0-pre+build')
+        v = base.Version.parse('1.0.0-pre+build')
         v = v.next_major()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 0)
@@ -329,7 +329,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.0-pre+build')
+        v = base.Version.parse('1.0.0-pre+build')
         v = v.next_minor()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 0)
@@ -337,7 +337,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.0-pre+build')
+        v = base.Version.parse('1.0.0-pre+build')
         v = v.next_patch()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 0)
@@ -345,7 +345,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.1.0-pre+build')
+        v = base.Version.parse('1.1.0-pre+build')
         v = v.next_major()
         self.assertEqual(v.major, 2)
         self.assertEqual(v.minor, 0)
@@ -353,7 +353,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.1.0-pre+build')
+        v = base.Version.parse('1.1.0-pre+build')
         v = v.next_minor()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 1)
@@ -361,7 +361,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.1.0-pre+build')
+        v = base.Version.parse('1.1.0-pre+build')
         v = v.next_patch()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 1)
@@ -369,7 +369,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.1-pre+build')
+        v = base.Version.parse('1.0.1-pre+build')
         v = v.next_major()
         self.assertEqual(v.major, 2)
         self.assertEqual(v.minor, 0)
@@ -377,7 +377,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.1-pre+build')
+        v = base.Version.parse('1.0.1-pre+build')
         v = v.next_minor()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 1)
@@ -385,7 +385,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.prerelease, ())
         self.assertEqual(v.build, ())
 
-        v = base.Version('1.0.1-pre+build')
+        v = base.Version.parse('1.0.1-pre+build')
         v = v.next_patch()
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 0)
@@ -534,11 +534,11 @@ class SpecItemTestCase(unittest.TestCase):
             matching, failing = versions
 
             for version_text in matching:
-                version = base.Version(version_text)
+                version = base.Version.parse(version_text)
                 self.assertTrue(spec.match(version), "%r should match %r" % (version, spec))
 
             for version_text in failing:
-                version = base.Version(version_text)
+                version = base.Version.parse(version_text)
                 self.assertFalse(spec.match(version),
                     "%r should not match %r" % (version, spec))
 
@@ -572,7 +572,7 @@ class CoerceTestCase(unittest.TestCase):
 
     def test_coerce(self):
         for equivalent, samples in self.examples.items():
-            target = base.Version(equivalent)
+            target = base.Version.parse(equivalent)
             for sample in samples:
                 v_sample = base.Version.coerce(sample)
                 self.assertEqual(target, v_sample)
@@ -636,14 +636,14 @@ class SpecTestCase(unittest.TestCase):
             matching, failing = versions
 
             for version_text in matching:
-                version = base.Version(version_text)
+                version = base.Version.parse(version_text)
                 self.assertTrue(version in spec_list,
                     "%r should be in %r" % (version, spec_list))
                 self.assertTrue(spec_list.match(version),
                     "%r should match %r" % (version, spec_list))
 
             for version_text in failing:
-                version = base.Version(version_text)
+                version = base.Version.parse(version_text)
                 self.assertFalse(version in spec_list,
                     "%r should not be in %r" % (version, spec_list))
                 self.assertFalse(spec_list.match(version),
@@ -664,28 +664,28 @@ class SpecTestCase(unittest.TestCase):
     def test_filter_incompatible(self):
         s = base.Spec('>=0.1.1,!=0.1.4')
         res = tuple(s.filter([
-            base.Version('0.1.0'),
-            base.Version('0.1.4'),
-            base.Version('0.1.4-alpha'),
+            base.Version.parse('0.1.0'),
+            base.Version.parse('0.1.4'),
+            base.Version.parse('0.1.4-alpha'),
         ]))
         self.assertEqual((), res)
 
     def test_filter_compatible(self):
         s = base.Spec('>=0.1.1,!=0.1.4,<0.2.0')
         res = tuple(s.filter([
-            base.Version('0.1.0'),
-            base.Version('0.1.1'),
-            base.Version('0.1.5'),
-            base.Version('0.1.4-alpha'),
-            base.Version('0.1.2'),
-            base.Version('0.2.0-rc1'),
-            base.Version('3.14.15'),
+            base.Version.parse('0.1.0'),
+            base.Version.parse('0.1.1'),
+            base.Version.parse('0.1.5'),
+            base.Version.parse('0.1.4-alpha'),
+            base.Version.parse('0.1.2'),
+            base.Version.parse('0.2.0-rc1'),
+            base.Version.parse('3.14.15'),
         ]))
 
         expected = (
-            base.Version('0.1.1'),
-            base.Version('0.1.5'),
-            base.Version('0.1.2'),
+            base.Version.parse('0.1.1'),
+            base.Version.parse('0.1.5'),
+            base.Version.parse('0.1.2'),
         )
 
         self.assertEqual(expected, res)
@@ -697,25 +697,25 @@ class SpecTestCase(unittest.TestCase):
     def test_select_incompatible(self):
         s = base.Spec('>=0.1.1,!=0.1.4')
         res = s.select([
-            base.Version('0.1.0'),
-            base.Version('0.1.4'),
-            base.Version('0.1.4-alpha'),
+            base.Version.parse('0.1.0'),
+            base.Version.parse('0.1.4'),
+            base.Version.parse('0.1.4-alpha'),
         ])
         self.assertIsNone(res)
 
     def test_select_compatible(self):
         s = base.Spec('>=0.1.1,!=0.1.4,<0.2.0')
         res = s.select([
-            base.Version('0.1.0'),
-            base.Version('0.1.1'),
-            base.Version('0.1.5'),
-            base.Version('0.1.4-alpha'),
-            base.Version('0.1.2'),
-            base.Version('0.2.0-rc1'),
-            base.Version('3.14.15'),
+            base.Version.parse('0.1.0'),
+            base.Version.parse('0.1.1'),
+            base.Version.parse('0.1.5'),
+            base.Version.parse('0.1.4-alpha'),
+            base.Version.parse('0.1.2'),
+            base.Version.parse('0.2.0-rc1'),
+            base.Version.parse('3.14.15'),
         ])
 
-        self.assertEqual(base.Version('0.1.5'), res)
+        self.assertEqual(base.Version.parse('0.1.5'), res)
 
     def test_contains(self):
         self.assertFalse('ii' in base.Spec('>=0.1.1'))

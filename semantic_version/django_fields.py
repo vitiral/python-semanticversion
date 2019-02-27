@@ -66,7 +66,7 @@ class VersionField(SemVerField):
         if self.coerce:
             return base.Version.coerce(value, partial=self.partial)
         else:
-            return base.Version(value, partial=self.partial)
+            return base.Version.parse(value, partial=self.partial)
 
 
 class SpecField(SemVerField):

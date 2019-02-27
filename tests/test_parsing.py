@@ -34,7 +34,7 @@ class ParsingTestCase(unittest.TestCase):
 
     def test_simple(self):
         for valid in self.valids:
-            version = semantic_version.Version(valid)
+            version = semantic_version.Version.parse(valid)
             self.assertEqual(valid, str(version))
 
 
@@ -51,9 +51,9 @@ class ComparisonTestCase(unittest.TestCase):
 
     def test_comparisons(self):
         for i, first in enumerate(self.order):
-            first_ver = semantic_version.Version(first)
+            first_ver = semantic_version.Version.parse(first)
             for j, second in enumerate(self.order):
-                second_ver = semantic_version.Version(second)
+                second_ver = semantic_version.Version.parse(second)
                 if i < j:
                     self.assertTrue(first_ver < second_ver, '%r !< %r' % (first_ver, second_ver))
                 elif i == j:
@@ -84,8 +84,8 @@ class ComparisonTestCase(unittest.TestCase):
     def test_unordered(self):
         for group in self.unordered:
             for a, b in itertools.combinations(group, 2):
-                v1 = semantic_version.Version(a)
-                v2 = semantic_version.Version(b)
+                v1 = semantic_version.Version.parse(a)
+                v2 = semantic_version.Version.parse(b)
                 self.assertTrue(v1 == v1, "%r != %r" % (v1, v1))
                 self.assertFalse(v1 != v1, "%r != %r" % (v1, v1))
                 self.assertFalse(v1 == v2, "%r == %r" % (v1, v2))

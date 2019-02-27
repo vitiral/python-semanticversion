@@ -73,9 +73,7 @@ class Version(object):
     version_re = re.compile(r'^(\d+)\.(\d+)\.(\d+)(?:-([0-9a-zA-Z.-]+))?(?:\+([0-9a-zA-Z.-]+))?$')
     partial_version_re = re.compile(r'^(\d+)(?:\.(\d+)(?:\.(\d+))?)?(?:-([0-9a-zA-Z.-]*))?(?:\+([0-9a-zA-Z.-]*))?$')
 
-    def __init__(self, version_string, partial=False):
-        major, minor, patch, prerelease, build = self.parse(version_string, partial)
-
+    def __init__(self, major, minor, patch, prerelease=None, build=None, partial=None):
         self.major = major
         self.minor = minor
         self.patch = patch
@@ -92,22 +90,22 @@ class Version(object):
 
     def next_major(self):
         if self.prerelease and self.minor == 0 and self.patch == 0:
-            return Version('.'.join(str(x) for x in [self.major, self.minor, self.patch]))
+            return Version.parse('.'.join(str(x) for x in [self.major, self.minor, self.patch]))
         else:
-            return Version('.'.join(str(x) for x in [self.major + 1, 0, 0]))
+            return Version.parse('.'.join(str(x) for x in [self.major + 1, 0, 0]))
 
     def next_minor(self):
         if self.prerelease and self.patch == 0:
-            return Version('.'.join(str(x) for x in [self.major, self.minor, self.patch]))
+            return Version.parse('.'.join(str(x) for x in [self.major, self.minor, self.patch]))
         else:
-            return Version(
+            return Version.parse(
                 '.'.join(str(x) for x in [self.major, self.minor + 1, 0]))
 
     def next_patch(self):
         if self.prerelease:
-            return Version('.'.join(str(x) for x in [self.major, self.minor, self.patch]))
+            return Version.parse('.'.join(str(x) for x in [self.major, self.minor, self.patch]))
         else:
-            return Version(
+            return Version.parse(
                 '.'.join(str(x) for x in [self.major, self.minor, self.patch + 1]))
 
     @classmethod
@@ -123,13 +121,13 @@ class Version(object):
 
         Examples:
             >>> Version.coerce('0.1')
-            Version(0, 1, 0)
+            Version.parse(0, 1, 0)
             >>> Version.coerce('0.1.2.3')
-            Version(0, 1, 2, (), ('3',))
+            Version.parse(0, 1, 2, (), ('3',))
             >>> Version.coerce('0.1.2.3+4')
-            Version(0, 1, 2, (), ('3', '4'))
+            Version.parse(0, 1, 2, (), ('3', '4'))
             >>> Version.coerce('0.1+2-3+4_5')
-            Version(0, 1, 0, (), ('2-3', '4-5'))
+            Version.parse(0, 1, 0, (), ('2-3', '4-5'))
         """
         base_re = re.compile(r'^\d+(?:\.\d+(?:\.\d+)?)?')
 
@@ -147,7 +145,7 @@ class Version(object):
                 version += '.0'
 
         if match.end() == len(version_string):
-            return Version(version, partial=partial)
+            return Version.parse(version, partial=partial)
 
         rest = version_string[match.end():]
 
@@ -184,7 +182,7 @@ class Version(object):
 
     @classmethod
     def parse(cls, version_string, partial=False, coerce=False):
-        """Parse a version string into a Version() object.
+        """Parse a version string into a Version.parse() object.
 
         Args:
             version_string (str), the version string to parse
@@ -220,7 +218,7 @@ class Version(object):
         if prerelease is None:
             if partial and (build is None):
                 # No build info, strip here
-                return (major, minor, patch, None, None)
+                return cls(major, minor, patch, None, None, partial=partial)
             else:
                 prerelease = ()
         elif prerelease == '':
@@ -240,7 +238,7 @@ class Version(object):
             build = tuple(build.split('.'))
             cls._validate_identifiers(build, allow_leading_zeroes=True)
 
-        return (major, minor, patch, prerelease, build)
+        return cls(major, minor, patch, prerelease, build, partial=partial)
 
     @classmethod
     def _validate_identifiers(cls, identifiers, allow_leading_zeroes=False):
@@ -444,7 +442,7 @@ class SpecItem(object):
         if kind in cls.KIND_ALIASES:
             kind = cls.KIND_ALIASES[kind]
 
-        spec = Version(version, partial=True)
+        spec = Version.parse(version, partial=True)
         if spec.build is not None and kind not in (cls.KIND_EQUAL, cls.KIND_NEQ):
             raise ValueError(
                 "Invalid requirement specification %r: build numbers have no ordering."
@@ -553,11 +551,11 @@ class Spec(object):
 
 
 def compare(v1, v2):
-    return base_cmp(Version(v1), Version(v2))
+    return base_cmp(Version.parse(v1), Version.parse(v2))
 
 
 def match(spec, version):
-    return Spec(spec).match(Version(version))
+    return Spec(spec).match(Version.parse(version))
 
 
 def validate(version_string):

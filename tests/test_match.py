@@ -142,7 +142,7 @@ class MatchTestCase(unittest.TestCase):
             spec = semantic_version.Spec(spec_txt)
             self.assertNotEqual(spec, spec_txt)
             for version_txt in versions:
-                version = semantic_version.Version(version_txt)
+                version = semantic_version.Version.parse(version_txt)
                 self.assertTrue(spec.match(version), "%r does not match %r" % (version, spec))
                 self.assertTrue(semantic_version.match(spec_txt, version_txt))
                 self.assertTrue(version in spec, "%r not in %r" % (version, spec))
@@ -151,22 +151,22 @@ class MatchTestCase(unittest.TestCase):
         spec = semantic_version.Spec('<=0.1.1')
         self.assertFalse('0.1.0' in spec, "0.1.0 should not be in %r" % spec)
 
-        version = semantic_version.Version('0.1.1+4.2')
+        version = semantic_version.Version.parse('0.1.1+4.2')
         self.assertTrue(version in spec, "%r should be in %r" % (version, spec))
 
-        version = semantic_version.Version('0.1.1-rc1+4.2')
+        version = semantic_version.Version.parse('0.1.1-rc1+4.2')
         self.assertTrue(version in spec, "%r should be in %r" % (version, spec))
 
     def test_prerelease_check(self):
         strict_spec = semantic_version.Spec('>=0.1.1-')
         lax_spec = semantic_version.Spec('>=0.1.1')
-        version = semantic_version.Version('0.1.1-rc1+4.2')
+        version = semantic_version.Version.parse('0.1.1-rc1+4.2')
         self.assertTrue(version in lax_spec, "%r should be in %r" % (version, lax_spec))
         self.assertFalse(version in strict_spec, "%r should not be in %r" % (version, strict_spec))
 
     def test_build_check(self):
         spec = semantic_version.Spec('<=0.1.1-rc1')
-        version = semantic_version.Version('0.1.1-rc1+4.2')
+        version = semantic_version.Version.parse('0.1.1-rc1+4.2')
         self.assertTrue(version in spec, "%r should be in %r" % (version, spec))
 
 
