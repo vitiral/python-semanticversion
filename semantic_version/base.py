@@ -73,7 +73,7 @@ class Version(object):
     version_re = re.compile(r'^(\d+)\.(\d+)\.(\d+)(?:-([0-9a-zA-Z.-]+))?(?:\+([0-9a-zA-Z.-]+))?$')
     partial_version_re = re.compile(r'^(\d+)(?:\.(\d+)(?:\.(\d+))?)?(?:-([0-9a-zA-Z.-]*))?(?:\+([0-9a-zA-Z.-]*))?$')
 
-    def __init__(self, major, minor, patch, prerelease=None, build=None, partial=None):
+    def __init__(self, major, minor, patch, prerelease=(), build=(), partial=False):
         self.major = major
         self.minor = minor
         self.patch = patch
@@ -90,9 +90,9 @@ class Version(object):
 
     def next_major(self):
         if self.prerelease and self.minor == 0 and self.patch == 0:
-            return Version.parse('.'.join(str(x) for x in [self.major, self.minor, self.patch]))
+            return Version(self.major, self.minor, self.patch)
         else:
-            return Version.parse('.'.join(str(x) for x in [self.major + 1, 0, 0]))
+            return Version(self.major + 1, 0, 0)
 
     def next_minor(self):
         if self.prerelease and self.patch == 0:
