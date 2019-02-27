@@ -96,10 +96,9 @@ class Version(object):
 
     def next_minor(self):
         if self.prerelease and self.patch == 0:
-            return Version.parse('.'.join(str(x) for x in [self.major, self.minor, self.patch]))
+            return Version(self.major, self.minor, self.patch)
         else:
-            return Version.parse(
-                '.'.join(str(x) for x in [self.major, self.minor + 1, 0]))
+            return Version(self.major, self.minor + 1, 0)
 
     def next_patch(self):
         if self.prerelease:
