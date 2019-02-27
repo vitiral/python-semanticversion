@@ -100,6 +100,13 @@ pkgsVersionsDeps = {
             "pkgE": [1.2, 1.4, 1.9],
         }
     }
+    pkgE: {
+        "1.0": {},
+        "1.1": {},
+        ...
+        "1.9": {},
+        "2.9": {},
+    }
 }
 ```
 
@@ -119,13 +126,6 @@ We now want to "solve" the dependency tree. The solution should:
 
 We have a set of pkgs with all the relevant versions that exist.
 
-```
-pkgsVersions = {
-    "pkgA": [2.3],
-    "pkgB": [1.0, 1.2, 1.4],
-    "pkgE": [1.0, 1.2, 1.4, 1.9, 2.9],
-}
-```
 
 I then walk the dependency tree, removing items from these sets as I go.
 
@@ -147,6 +147,89 @@ At the end of the day you are left with a `pkgsVersions` object that is
 _guaranteed to meet everyone's needs_. You simply select the max version for
 each pkg and be on your way :D
 
+**Oh wait**, I know why this doesn't work. We don't necessarily need to
+_use_ every pkg. I forgot that simple concept. The above is all true,
+but such a use-case is almost never actually solveable (there are too
+many possible dependencies, each with their own dependencies...).
+
+Instead I have to solve a harder problem... choosing a single version in each
+step but backtracking if it doesn't work.
+
+```python
+pkgsLocked = {
+    pkg: None for pkg in pkgsVersionDeps.keys()
+}
+
+failedVersions = {
+    pkg: set() for pkg in pkgsVersionDeps.keys()
+}
+
+def attempt_pkg_traversal(pkg):
+    lockedVersion = pkgsLocked[pkg]
+    if lockedVersion is not None:
+        # this pkg has already been locked, attempt to use that version.
+        attempt_pkgVersion_traversal(pkg, lockedVersion)
+        return  # no error == success
+
+    for pkgVersion in pkgsVersionsDeps[pkg].keys():
+        if pkgVersion in failed[pkg]:
+            continue
+
+        pkgsLocked[pkg] = pkgVersion
+        try:
+            attempt_pkgVersion_traversal(pkg, pkgVersion)
+            return
+        except NotSolved:
+            # clean up after ourselves, that lock did not work
+            pkgsLocked[pkg] = None
+            failedVersions[pkg].add(pkgVersion)
+
+
+def attempt_pkgVersion_traversal(pkg, pkgVersion):
+    depsVersions = pkgVersionsDeps[pkg][pkgVersion]
+
+    for dep, depVersions in depsVersions.items():
+        lockedDepVersion = pkgsLocked[dep]
+        if lockedDepVersion is not None:
+            if lockedDepVersion in depVersions:
+                # One of our dependencies was locked, and we can use the
+                # locked version.
+                #
+                # Note: we are _within_ the attempt to lock the dependency
+                # at this version.
+                continue
+            raise NotSolved()
+
+        for depVersion in depVersions:
+            if depVersion in failedVersions[dep]:
+                continue
+
+            pkgsLocked[dep] = depVersion
+            try:
+                attempt_pkg_traversal(dep)
+                # We resolved every dependency for dep, lock remains
+                #
+                # TODO: I'm a little concerned about this break...
+                # I'm not totally convinced we are trying everything
+                # with it. Then again, we have to have a way to exit the
+                # loop!
+                #
+                # What I'm more concerned with is... who cleans it up?
+                # we might fail later, but now the lock will stay forever.
+                #
+                # No way... this actually represents going through
+                # the _entire_ pkgsVersionsDeps tree! This shouldn't
+                # be break, it should be return!
+                #
+                # Reasoning being: this code was already executed for
+                # the dependencies, but they skipped "us" since our
+                # lockedDepVersion was in the lockedVersion
+                return  # success!
+            except NotSolved:
+                pkgsLocked[dep] = None
+                failedVersions[dep].add(depVersion)
+```
+
 
 ## Solving with multiple versions of same pkg (when necessary)
 > TODO: I haven't figured this out yet...
@@ -155,9 +238,8 @@ If we are allowed to have multiple versions of the same pkg, we can solve
 any dependency tree.
 
 To do so, we must be able to _branch_ the pkgsVersions object, creating
-multiple "pkg groups" and solving them in parallel. If a pkg can be
-solved in the first group it will be, or it will be solved in the second etc.
-
+multiple "pkg groups" and solving them side by side, relying on larger-index groups
+when the lower-index one doesn't work.
 
 
 ```
@@ -192,7 +274,10 @@ for pkg, pkgVersionsDeps in pkgsVersionsDeps.items():
 ```
 
 Once the groups are determined, it is possible they can be merged later. I
-don't know, I have to go to sleep...
+don't know, I have to go to sleep, but I think if I create a secondary group
+I have to recurse into it... or something. It's hard to completely tell
+honestly, I have to say I really appreciate only allowing a single pkg version
+in your dependency tree, and requiring developers to _just figure that out_.
 
 
 # OLD
