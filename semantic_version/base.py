@@ -523,47 +523,44 @@ class VersionEdges(object):
     are converted to one of Eq, LT or GTE
     - ANY is converted to ``>=0.0.1``
     - EQ becomes GTE ``==1.2.3 becomes >=1.2.3``
+    - NEQ is exclusive: ``!=1.2.3 becomes <1.2.3,>=1.2.4``
     - GT becomes GTE the bumped patch. ``>1.2.3 becomes >=1.2.4``
     - LTE becomes LT the bumped patch. ``<=2.0.0 becomes <2.0.1``
     - EMPTY is converted to CARET (which is converted)
-    - NEQ is converted to two ReqVersions: ``!=1.2.3 becomes <1.2.3,>=1.2.4``
     - CARET is converted to two ReqVersions: ``^1.2.3 becomes >=1.2.3,<2.0.0``
     - TILTE is converted to two ReqVersions: ``~1.2.3 becomes >=1.2.3,<1.3.0``
     - KIND_COMPATIBLE is converted similar to CARET
     """
-    def __init__(self, req_items=None):
+    def __init__(self):
         self.reqs_lt = []
         self.reqs_gte = []
-        for req_item in req_items or []:
-            self.append(req_item)
 
     def append(self, req):
         """Note: Appending a req can cause up to two reqs being added."""
-        a_lt = self.req_lt.append
-        a_gte = self.req_gte.append
+        a_lt = self.reqs_lt.append
+        a_gte = self.reqs_gte.append
 
         if req.kind == req.KIND_LT:
-            a_lt(SpecLt(req.version))
+            a_lt(VersionLt(req.version))
 
         elif req.kind == req.KIND_GTE:
-            a_gte(SpecGte(req.version))
+            a_gte(VersionGte(req.version))
 
-        elif req.kind == req.KIND_EQ:
-            a_gte(SpecGte(req.version))
-            a_lt(SpecLt(req.version.next_patch()))
-
-        elif req.kind == req.KIND_ANY:
-            a_gte(SpecGte(Version(0, 0, 1)))
-
-        elif req.kind == req.KIND_LTE:
-            a_lt(SpecLt(req.version.next_patch()))
-
-        elif req.kind == req.KIND_GT:
-            a_gte(SpecGte(req.version.next_patch()))
+        elif req.kind == req.KIND_EQUAL or req.kind == req.KIND_SHORTEQ:
+            a_gte(VersionGte(req.version))
 
         elif req.kind == req.KIND_NEQ:
-            a_lt(SpecLt(req.version))
-            a_gte(SpecGte(req.version.next_patch()))
+            a_lt(VersionLt(req.version))
+            a_gte(VersionGte(req.version.next_patch()))
+
+        elif req.kind == req.KIND_ANY:
+            a_gte(VersionGte(Version(0, 0, 1)))
+
+        elif req.kind == req.KIND_LTE:
+            a_lt(VersionLt(req.version.next_patch()))
+
+        elif req.kind == req.KIND_GT:
+            a_gte(VersionGte(req.version.next_patch()))
 
         # TODO: finish these
         # elif req.kind == req.KIND_CARET:
