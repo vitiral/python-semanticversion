@@ -502,6 +502,8 @@ class SpecItem(object):
 
 class Spec(object):
     def __init__(self, specs):
+        if not isinstance(specs, tuple):
+            specs = tuple(specs)
         self.specs = specs
 
     @classmethod
