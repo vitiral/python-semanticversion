@@ -133,9 +133,9 @@ class MatchTestCase(unittest.TestCase):
 
     def test_simple(self):
         for valid in self.valid_specs:
-            spec = semantic_version.SpecItem.parse(valid)
+            spec = semantic_version.VersionReq.parse(valid)
             normalized = str(spec)
-            self.assertEqual(spec, semantic_version.SpecItem.parse(normalized))
+            self.assertEqual(spec, semantic_version.VersionReq.parse(normalized))
 
     def test_match(self):
         for spec_txt, versions in self.matches.items():

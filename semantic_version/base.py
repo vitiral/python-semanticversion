@@ -396,7 +396,7 @@ class Version(object):
         return self.__compare_helper(other, lambda x: x >= 0, notimpl_target=False)
 
 
-class SpecItem(object):
+class VersionReq(object):
     """A requirement specification."""
 
     KIND_ANY = '*'
@@ -420,9 +420,9 @@ class SpecItem(object):
 
     re_spec = re.compile(r'^(<|<=||=|==|>=|>|!=|\^|~|~=)(\d.*)$')
 
-    def __init__(self, kind, spec):
+    def __init__(self, kind, version):
         self.kind = kind
-        self.spec = spec
+        self.version = version
 
     @classmethod
     def parse(cls, requirement_string):
@@ -455,70 +455,70 @@ class SpecItem(object):
         if self.kind == self.KIND_ANY:
             return True
         elif self.kind == self.KIND_LT:
-            return version < self.spec
+            return version < self.version
         elif self.kind == self.KIND_LTE:
-            return version <= self.spec
+            return version <= self.version
         elif self.kind == self.KIND_EQUAL:
-            return version == self.spec
+            return version == self.version
         elif self.kind == self.KIND_GTE:
-            return version >= self.spec
+            return version >= self.version
         elif self.kind == self.KIND_GT:
-            return version > self.spec
+            return version > self.version
         elif self.kind == self.KIND_NEQ:
-            return version != self.spec
+            return version != self.version
         elif self.kind == self.KIND_CARET:
-            if self.spec.major != 0:
-                upper = self.spec.next_major()
-            elif self.spec.minor != 0:
-                upper = self.spec.next_minor()
+            if self.version.major != 0:
+                upper = self.version.next_major()
+            elif self.version.minor != 0:
+                upper = self.version.next_minor()
             else:
-                upper = self.spec.next_patch()
-            return self.spec <= version < upper
+                upper = self.version.next_patch()
+            return self.version <= version < upper
         elif self.kind == self.KIND_TILDE:
-            return self.spec <= version < self.spec.next_minor()
+            return self.version <= version < self.version.next_minor()
         elif self.kind == self.KIND_COMPATIBLE:
-            if self.spec.patch is not None:
-                upper = self.spec.next_minor()
+            if self.version.patch is not None:
+                upper = self.version.next_minor()
             else:
-                upper = self.spec.next_major()
-            return self.spec <= version < upper
+                upper = self.version.next_major()
+            return self.version <= version < upper
         else:  # pragma: no cover
             raise ValueError('Unexpected match kind: %r' % self.kind)
 
     def __str__(self):
-        return '%s%s' % (self.kind, self.spec)
+        return '%s%s' % (self.kind, self.version)
 
     def __repr__(self):
-        return '<SpecItem: %s %r>' % (self.kind, self.spec)
+        return '<VersionReq: %s %r>' % (self.kind, self.version)
 
     def __eq__(self, other):
-        if not isinstance(other, SpecItem):
+        if not isinstance(other, VersionReq):
             return NotImplemented
-        return self.kind == other.kind and self.spec == other.spec
+        return self.kind == other.kind and self.version == other.version
 
     def __hash__(self):
-        return hash((self.kind, self.spec))
+        return hash((self.kind, self.version))
 
 
 class Spec(object):
     def __init__(self, specs):
         if not isinstance(specs, tuple):
             specs = tuple(specs)
-        self.specs = specs
+        self.version = specs
 
     @classmethod
     def from_str(cls, *strs):
         specs = []
         for multi_spc_strs in strs:
             specs.extend(
-                SpecItem.parse(spec_str) for spec_str
+                VersionReq.parse(spec_str) for spec_str
                 in multi_spc_strs.split(',')
             )
         return cls(specs)
 
     def match(self, version):
         """Check whether a Version satisfies the Spec."""
-        return all(spec.match(version) for spec in self.specs)
+        return all(spec.match(version) for spec in self.version)
 
     def filter(self, versions):
         """Filter an iterable of versions satisfying the Spec."""
@@ -539,22 +539,42 @@ class Spec(object):
         return False
 
     def __iter__(self):
-        return iter(self.specs)
+        return iter(self.version)
 
     def __str__(self):
-        return ','.join(str(spec) for spec in self.specs)
+        return ','.join(str(spec) for spec in self.version)
 
     def __repr__(self):
-        return '<Spec: %r>' % (self.specs,)
+        return '<Spec: %r>' % (self.version,)
 
     def __eq__(self, other):
         if not isinstance(other, Spec):
             return NotImplemented
 
-        return set(self.specs) == set(other.specs)
+        return set(self.version) == set(other.version)
 
     def __hash__(self):
-        return hash(self.specs)
+        return hash(self.version)
+
+
+class VersionLt(VersionReq):
+    def __init__(self, version):
+        self.kind = self.KIND_LT
+        self.version = version
+
+    def __cmp__(self, other):
+        assert isinstance(other, VersionLt)
+        return self.version.__cmp__(other.version)
+
+
+class VersionGte(VersionReq):
+    def __init__(self, version):
+        self.kind = self.KIND_GTE
+        self.version = version
+
+    def __cmp__(self, other):
+        assert isinstance(other, VersionGte)
+        return self.version.__cmp__(other.version)
 
 
 def compare(v1, v2):

@@ -394,7 +394,7 @@ class VersionTestCase(unittest.TestCase):
         self.assertEqual(v.build, ())
 
 
-class SpecItemTestCase(unittest.TestCase):
+class VersionReqTestCase(unittest.TestCase):
     invalids = [
         '<=0.1.1+build3',
         '<=0.1.1+',
@@ -403,39 +403,39 @@ class SpecItemTestCase(unittest.TestCase):
 
     def test_invalids(self):
         for invalid in self.invalids:
-            with self.assertRaises(ValueError, msg="SpecItem.parse(%r) should be invalid" % invalid):
-                _v = base.SpecItem.parse(invalid)
+            with self.assertRaises(ValueError, msg="VersionReq.parse(%r) should be invalid" % invalid):
+                _v = base.VersionReq.parse(invalid)
 
     components = {
-        '==0.1.0': (base.SpecItem.KIND_EQUAL, 0, 1, 0, None, None),
-        '==0.1.2-rc3': (base.SpecItem.KIND_EQUAL, 0, 1, 2, ('rc3',), None),
-        '==0.1.2+build3.14': (base.SpecItem.KIND_EQUAL, 0, 1, 2, (), ('build3', '14')),
-        '<=0.1.1': (base.SpecItem.KIND_LTE, 0, 1, 1, None, None),
-        '<0.1.1': (base.SpecItem.KIND_LT, 0, 1, 1, None, None),
-        '<=0.1.1': (base.SpecItem.KIND_LTE, 0, 1, 1, None, None),
-        '!=0.1.1+': (base.SpecItem.KIND_NEQ, 0, 1, 1, (), ()),
-        '<=0.1.1-': (base.SpecItem.KIND_LTE, 0, 1, 1, (), None),
-        '>=0.2.3-rc2': (base.SpecItem.KIND_GTE, 0, 2, 3, ('rc2',), None),
-        '>=2.0.0': (base.SpecItem.KIND_GTE, 2, 0, 0, None, None),
-        '!=0.1.1+rc3': (base.SpecItem.KIND_NEQ, 0, 1, 1, (), ('rc3',)),
-        '!=0.3.0': (base.SpecItem.KIND_NEQ, 0, 3, 0, None, None),
-        '=0.3.0': (base.SpecItem.KIND_EQUAL, 0, 3, 0, None, None),
-        '0.3.0': (base.SpecItem.KIND_EQUAL, 0, 3, 0, None, None),
-        '~0.1.2': (base.SpecItem.KIND_TILDE, 0, 1, 2, None, None),
-        '^0.1.3': (base.SpecItem.KIND_CARET, 0, 1, 3, None, None),
+        '==0.1.0': (base.VersionReq.KIND_EQUAL, 0, 1, 0, None, None),
+        '==0.1.2-rc3': (base.VersionReq.KIND_EQUAL, 0, 1, 2, ('rc3',), None),
+        '==0.1.2+build3.14': (base.VersionReq.KIND_EQUAL, 0, 1, 2, (), ('build3', '14')),
+        '<=0.1.1': (base.VersionReq.KIND_LTE, 0, 1, 1, None, None),
+        '<0.1.1': (base.VersionReq.KIND_LT, 0, 1, 1, None, None),
+        '<=0.1.1': (base.VersionReq.KIND_LTE, 0, 1, 1, None, None),
+        '!=0.1.1+': (base.VersionReq.KIND_NEQ, 0, 1, 1, (), ()),
+        '<=0.1.1-': (base.VersionReq.KIND_LTE, 0, 1, 1, (), None),
+        '>=0.2.3-rc2': (base.VersionReq.KIND_GTE, 0, 2, 3, ('rc2',), None),
+        '>=2.0.0': (base.VersionReq.KIND_GTE, 2, 0, 0, None, None),
+        '!=0.1.1+rc3': (base.VersionReq.KIND_NEQ, 0, 1, 1, (), ('rc3',)),
+        '!=0.3.0': (base.VersionReq.KIND_NEQ, 0, 3, 0, None, None),
+        '=0.3.0': (base.VersionReq.KIND_EQUAL, 0, 3, 0, None, None),
+        '0.3.0': (base.VersionReq.KIND_EQUAL, 0, 3, 0, None, None),
+        '~0.1.2': (base.VersionReq.KIND_TILDE, 0, 1, 2, None, None),
+        '^0.1.3': (base.VersionReq.KIND_CARET, 0, 1, 3, None, None),
     }
 
     def test_components(self):
         for spec_text, components in self.components.items():
             kind, major, minor, patch, prerelease, build = components
-            spec = base.SpecItem.parse(spec_text)
+            spec = base.VersionReq.parse(spec_text)
 
             self.assertEqual(kind, spec.kind)
-            self.assertEqual(major, spec.spec.major)
-            self.assertEqual(minor, spec.spec.minor)
-            self.assertEqual(patch, spec.spec.patch)
-            self.assertEqual(prerelease, spec.spec.prerelease)
-            self.assertEqual(build, spec.spec.build)
+            self.assertEqual(major, spec.version.major)
+            self.assertEqual(minor, spec.version.minor)
+            self.assertEqual(patch, spec.version.patch)
+            self.assertEqual(prerelease, spec.version.prerelease)
+            self.assertEqual(build, spec.version.build)
 
     matches = {
         '==0.1.0': (
@@ -530,7 +530,7 @@ class SpecItemTestCase(unittest.TestCase):
 
     def test_matches(self):
         for spec_text, versions in self.matches.items():
-            spec = base.SpecItem.parse(spec_text)
+            spec = base.VersionReq.parse(spec_text)
             matching, failing = versions
 
             for version_text in matching:
@@ -543,19 +543,19 @@ class SpecItemTestCase(unittest.TestCase):
                     "%r should not match %r" % (version, spec))
 
     def test_equality(self):
-        spec1 = base.SpecItem.parse('==0.1.0')
-        spec2 = base.SpecItem.parse('==0.1.0')
+        spec1 = base.VersionReq.parse('==0.1.0')
+        spec2 = base.VersionReq.parse('==0.1.0')
         self.assertEqual(spec1, spec2)
         self.assertFalse(spec1 == '==0.1.0')
 
     def test_to_string(self):
-        spec = base.SpecItem.parse('==0.1.0')
+        spec = base.VersionReq.parse('==0.1.0')
         self.assertEqual('==0.1.0', str(spec))
-        self.assertEqual(base.SpecItem.KIND_EQUAL, spec.kind)
+        self.assertEqual(base.VersionReq.KIND_EQUAL, spec.kind)
 
     def test_hash(self):
         self.assertEqual(1,
-            len(set([base.SpecItem.parse('==0.1.0'), base.SpecItem.parse('==0.1.0')])))
+            len(set([base.VersionReq.parse('==0.1.0'), base.VersionReq.parse('==0.1.0')])))
 
 
 class CoerceTestCase(unittest.TestCase):
@@ -596,7 +596,7 @@ class SpecTestCase(unittest.TestCase):
             self.assertEqual(specs, [str(spec) for spec in spec_list])
 
             for spec_text in specs:
-                self.assertTrue(repr(base.SpecItem.parse(spec_text)) in repr(spec_list))
+                self.assertTrue(repr(base.VersionReq.parse(spec_text)) in repr(spec_list))
 
     split_examples = {
         ('>=0.1.1', '<0.1.2', '!=0.1.1+build1'): ['>=0.1.1', '<0.1.2', '!=0.1.1+build1'],
@@ -612,7 +612,7 @@ class SpecTestCase(unittest.TestCase):
             self.assertEqual(spec_list, base.Spec.from_str(','.join(spec_list_texts)))
 
             for spec_text in specs:
-                self.assertTrue(repr(base.SpecItem.parse(spec_text)) in repr(spec_list))
+                self.assertTrue(repr(base.VersionReq.parse(spec_text)) in repr(spec_list))
 
     matches = {
         # At least 0.1.1 including pre-releases, less than 0.1.2 excluding pre-releases
