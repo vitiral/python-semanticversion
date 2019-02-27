@@ -420,8 +420,7 @@ class SpecItem(object):
 
     re_spec = re.compile(r'^(<|<=||=|==|>=|>|!=|\^|~|~=)(\d.*)$')
 
-    def __init__(self, requirement_string):
-        kind, spec = self.parse(requirement_string)
+    def __init__(self, kind, spec):
         self.kind = kind
         self.spec = spec
 
@@ -432,7 +431,8 @@ class SpecItem(object):
 
         # Special case: the 'any' version spec.
         if requirement_string == '*':
-            return (cls.KIND_ANY, '')
+            # FIXME(rett): an empty string? Why not None?
+            return cls(cls.KIND_ANY, '')
 
         match = cls.re_spec.match(requirement_string)
         if not match:
@@ -448,7 +448,8 @@ class SpecItem(object):
                 "Invalid requirement specification %r: build numbers have no ordering."
                 % requirement_string
             )
-        return (kind, spec)
+
+        return cls(kind, spec)
 
     def match(self, version):
         if self.kind == self.KIND_ANY:
