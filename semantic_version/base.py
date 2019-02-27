@@ -178,7 +178,7 @@ class Version(object):
         if build:
             version = '%s+%s' % (version, build)
 
-        return cls(version, partial=partial)
+        return cls.parse(version, partial=partial)
 
     @classmethod
     def parse(cls, version_string, partial=False, coerce=False):

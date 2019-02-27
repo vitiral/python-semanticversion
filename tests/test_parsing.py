@@ -30,7 +30,7 @@ class ParsingTestCase(unittest.TestCase):
 
     def test_invalid(self):
         for invalid in self.invalids:
-            self.assertRaises(ValueError, semantic_version.Version, invalid)
+            self.assertRaises(ValueError, semantic_version.Version.parse, invalid)
 
     def test_simple(self):
         for valid in self.valids:

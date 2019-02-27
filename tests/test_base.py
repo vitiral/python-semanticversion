@@ -159,7 +159,7 @@ class VersionTestCase(unittest.TestCase):
         for text in self.versions:
             version = base.Version.parse(text)
             self.assertEqual(text, str(version))
-            self.assertEqual("Version.parse('%s')" % text, repr(version))
+            self.assertEqual("Version('%s')" % text, repr(version))
 
     def test_compare_to_self(self):
         for text in self.versions:
@@ -202,7 +202,7 @@ class VersionTestCase(unittest.TestCase):
         for text in self.partial_versions:
             version = base.Version.parse(text, partial=True)
             self.assertEqual(text, str(version))
-            self.assertEqual("Version.parse('%s', partial=True)" % text, repr(version))
+            self.assertEqual("Version('%s', partial=True)" % text, repr(version))
 
     def test_compare_partial_to_self(self):
         for text in self.partial_versions:
