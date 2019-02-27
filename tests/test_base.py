@@ -426,16 +426,16 @@ class VersionReqTestCase(unittest.TestCase):
     }
 
     def test_components(self):
-        for spec_text, components in self.components.items():
+        for req_text, components in self.components.items():
             kind, major, minor, patch, prerelease, build = components
-            spec = base.VersionReq.parse(spec_text)
+            req = base.VersionReq.parse(req_text)
 
-            self.assertEqual(kind, spec.kind)
-            self.assertEqual(major, spec.version.major)
-            self.assertEqual(minor, spec.version.minor)
-            self.assertEqual(patch, spec.version.patch)
-            self.assertEqual(prerelease, spec.version.prerelease)
-            self.assertEqual(build, spec.version.build)
+            self.assertEqual(kind, req.kind)
+            self.assertEqual(major, req.version.major)
+            self.assertEqual(minor, req.version.minor)
+            self.assertEqual(patch, req.version.patch)
+            self.assertEqual(prerelease, req.version.prerelease)
+            self.assertEqual(build, req.version.build)
 
     matches = {
         '==0.1.0': (
@@ -529,18 +529,18 @@ class VersionReqTestCase(unittest.TestCase):
     }
 
     def test_matches(self):
-        for spec_text, versions in self.matches.items():
-            spec = base.VersionReq.parse(spec_text)
+        for req_text, versions in self.matches.items():
+            req = base.VersionReq.parse(req_text)
             matching, failing = versions
 
             for version_text in matching:
                 version = base.Version.parse(version_text)
-                self.assertTrue(spec.match(version), "%r should match %r" % (version, spec))
+                self.assertTrue(req.match(version), "%r should match %r" % (version, req))
 
             for version_text in failing:
                 version = base.Version.parse(version_text)
-                self.assertFalse(spec.match(version),
-                    "%r should not match %r" % (version, spec))
+                self.assertFalse(req.match(version),
+                    "%r should not match %r" % (version, req))
 
     def test_equality(self):
         spec1 = base.VersionReq.parse('==0.1.0')
@@ -549,9 +549,9 @@ class VersionReqTestCase(unittest.TestCase):
         self.assertFalse(spec1 == '==0.1.0')
 
     def test_to_string(self):
-        spec = base.VersionReq.parse('==0.1.0')
-        self.assertEqual('==0.1.0', str(spec))
-        self.assertEqual(base.VersionReq.KIND_EQUAL, spec.kind)
+        req = base.VersionReq.parse('==0.1.0')
+        self.assertEqual('==0.1.0', str(req))
+        self.assertEqual(base.VersionReq.KIND_EQUAL, req.kind)
 
     def test_hash(self):
         self.assertEqual(1,
@@ -588,15 +588,15 @@ class SpecTestCase(unittest.TestCase):
     }
 
     def test_parsing(self):
-        for spec_list_text, specs in self.examples.items():
-            spec_list = base.Spec.from_str(spec_list_text)
+        for req_list_text, specs in self.examples.items():
+            spec_list = base.Spec.from_str(req_list_text)
 
-            self.assertEqual(spec_list_text, str(spec_list))
-            self.assertNotEqual(spec_list_text, spec_list)
+            self.assertEqual(req_list_text, str(spec_list))
+            self.assertNotEqual(req_list_text, spec_list)
             self.assertEqual(specs, [str(spec) for spec in spec_list])
 
-            for spec_text in specs:
-                self.assertTrue(repr(base.VersionReq.parse(spec_text)) in repr(spec_list))
+            for req_text in specs:
+                self.assertTrue(repr(base.VersionReq.parse(req_text)) in repr(spec_list))
 
     split_examples = {
         ('>=0.1.1', '<0.1.2', '!=0.1.1+build1'): ['>=0.1.1', '<0.1.2', '!=0.1.1+build1'],
@@ -604,15 +604,15 @@ class SpecTestCase(unittest.TestCase):
     }
 
     def test_parsing_split(self):
-        for spec_list_texts, specs in self.split_examples.items():
-            spec_list = base.Spec.from_str(*spec_list_texts)
+        for req_list_text, specs in self.split_examples.items():
+            spec_list = base.Spec.from_str(*req_list_text)
 
-            self.assertEqual(','.join(spec_list_texts), str(spec_list))
+            self.assertEqual(','.join(req_list_text), str(spec_list))
             self.assertEqual(specs, [str(spec) for spec in spec_list])
-            self.assertEqual(spec_list, base.Spec.from_str(','.join(spec_list_texts)))
+            self.assertEqual(spec_list, base.Spec.from_str(','.join(req_list_text)))
 
-            for spec_text in specs:
-                self.assertTrue(repr(base.VersionReq.parse(spec_text)) in repr(spec_list))
+            for req_text in specs:
+                self.assertTrue(repr(base.VersionReq.parse(req_text)) in repr(spec_list))
 
     matches = {
         # At least 0.1.1 including pre-releases, less than 0.1.2 excluding pre-releases
@@ -631,8 +631,8 @@ class SpecTestCase(unittest.TestCase):
     }
 
     def test_matches(self):
-        for spec_list_text, versions in self.matches.items():
-            spec_list = base.Spec.from_str(spec_list_text)
+        for req_list_text, versions in self.matches.items():
+            spec_list = base.Spec.from_str(req_list_text)
             matching, failing = versions
 
             for version_text in matching:
@@ -650,11 +650,11 @@ class SpecTestCase(unittest.TestCase):
                     "%r should not match %r" % (version, spec_list))
 
     def test_equality(self):
-        for spec_list_text in self.examples:
-            slist1 = base.Spec.from_str(spec_list_text)
-            slist2 = base.Spec.from_str(spec_list_text)
+        for req_list_text in self.examples:
+            slist1 = base.Spec.from_str(req_list_text)
+            slist2 = base.Spec.from_str(req_list_text)
             self.assertEqual(slist1, slist2)
-            self.assertFalse(slist1 == spec_list_text)
+            self.assertFalse(slist1 == req_list_text)
 
     def test_filter_empty(self):
         s = base.Spec.from_str('>=0.1.1')
