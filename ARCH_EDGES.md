@@ -148,6 +148,53 @@ _guaranteed to meet everyone's needs_. You simply select the max version for
 each pkg and be on your way :D
 
 
+## Solving with multiple versions of same pkg (when necessary)
+> TODO: I haven't figured this out yet...
+
+If we are allowed to have multiple versions of the same pkg, we can solve
+any dependency tree.
+
+To do so, we must be able to _branch_ the pkgsVersions object, creating
+multiple "pkg groups" and solving them in parallel. If a pkg can be
+solved in the first group it will be, or it will be solved in the second etc.
+
+
+
+```
+pkgsVersionsKeep = pkgsVersions
+del pkgsVersions
+pkgsVersionsGroups = [copy.deepcopy(pkgsVersionsKeep)]
+
+for pkg, pkgVersionsDeps in pkgsVersionsDeps.items():
+    for version, depsVersions in pkgVersionsDeps.items():
+        for dep, depVersions in depsVersions.items():
+            handled = False
+            groupIndex = 0
+            while True:
+                try:
+                    pkgsVersions = pkgsVersionsGroups[groupIndex]
+                except IndexError:
+                    # we need to branch new versions
+                    pkgsVersions = copy.deepcopy(pkgsVersionsKeep)
+                    pkgsVersionsGroups.append(pkgsVersions)
+
+                # only keep versions that are acceptible to this dep
+                reduced = pkgsVersions[dep].union(depVersions)
+                if len(reduced) == 0:
+                    # reduced is actually empty... meaning there
+                    # are no versions which meet its requirements.
+                    groupIndex += 1
+                    continue # try or create a new group.
+
+                # pkgsVersions keeps getting smaller
+                pkgsVersions[dep] = reduced
+                break
+```
+
+Once the groups are determined, it is possible they can be merged later. I
+don't know, I have to go to sleep...
+
+
 # OLD
 
 We retrieve some pkgs and create a flat map which specifies which pkgs have
