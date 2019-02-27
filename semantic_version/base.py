@@ -538,55 +538,65 @@ class VersionEdges(object):
 
     def append(self, req):
         """Note: Appending a req can cause up to two reqs being added."""
+
+        # TODO: the "next patch" stuff here may want to preserve builds, etc in
+        # some way??
         version = req.version
         if version and version.partial:
             # partial requirement versions change the hash since
             # prerelease and build get set to different things.
             raise TypeError("Partial req versions are not allowed")
+        kind = req.kind
         a_lt = self.reqs_lt.add
         a_gte = self.reqs_gte.add
 
-        if req.kind == req.KIND_LT:
+        if kind == req.KIND_LT:
             a_lt(VersionLt(version))
 
-        elif req.kind == req.KIND_GTE:
+        elif kind == req.KIND_GTE:
             a_gte(VersionGte(version))
 
-        elif req.kind == req.KIND_EQUAL or req.kind == req.KIND_SHORTEQ:
+        elif kind == req.KIND_EQUAL or kind == req.KIND_SHORTEQ:
             a_gte(VersionGte(version))
 
-        elif req.kind == req.KIND_NEQ:
+        elif kind == req.KIND_NEQ:
             a_lt(VersionLt(version))
             a_gte(VersionGte(version.next_patch()))
 
-        elif req.kind == req.KIND_ANY:
+        elif kind == req.KIND_ANY:
             a_gte(VersionGte(Version(0, 0, 1)))
 
-        elif req.kind == req.KIND_LTE:
+        elif kind == req.KIND_LTE:
             a_lt(VersionLt(version.next_patch()))
 
-        elif req.kind == req.KIND_GT:
+        elif kind == req.KIND_GT:
             a_gte(VersionGte(version.next_patch()))
 
-        # TODO: finish these
-        # elif req.kind == req.KIND_CARET:
-        #     if req.req.major != 0:
-        #         upper = req.req.next_major()
-        #     elif req.req.minor != 0:
-        #         upper = req.req.next_minor()
-        #     else:
-        #         upper = req.req.next_patch()
-        #     return req.req <= version < upper
-        # elif req.kind == req.KIND_TILDE:
-        #     return req.req <= version < req.req.next_minor()
-        # elif req.kind == req.KIND_COMPATIBLE:
-        #     if req.req.patch is not None:
-        #         upper = req.req.next_minor()
-        #     else:
-        #         upper = req.req.next_major()
-        #     return req.req <= version < upper
+        elif kind == req.KIND_CARET:
+            if version.major != 0:
+                upper = version.next_major()
+            elif version.minor != 0:
+                upper = version.next_minor()
+            else:
+                upper = version.next_patch()
+            a_gte(VersionGte(version))
+            a_lt(VersionLt(upper))
+
+        elif kind == req.KIND_TILDE:
+            a_gte(VersionGte(version))
+            a_lt(VersionLt(version.next_minor()))
+
+        elif kind == req.KIND_COMPATIBLE:
+            if version.patch is not None:
+                upper = version.next_minor()
+            else:
+                upper = version.next_major()
+            a_gte(VersionGte(version))
+            a_lt(VersionLt(upper))
+
         else:  # pragma: no cover
-            raise ValueError('Unexpected match kind: %r' % req.kind)
+            raise ValueError('Unexpected match kind: %r' % kind)
+
 
 
 class Spec(object):
