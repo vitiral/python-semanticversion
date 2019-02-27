@@ -82,8 +82,8 @@ class Version(object):
 
         self.partial = partial
 
-    @classmethod
-    def _coerce(cls, value, allow_none=False):
+    @staticmethod
+    def _coerce(value, allow_none=False):
         if value is None and allow_none:
             return value
         return int(value)
@@ -240,8 +240,8 @@ class Version(object):
 
         return cls(major, minor, patch, prerelease, build, partial=partial)
 
-    @classmethod
-    def _validate_identifiers(cls, identifiers, allow_leading_zeroes=False):
+    @staticmethod
+    def _validate_identifiers(identifiers, allow_leading_zeroes=False):
         for item in identifiers:
             if not item:
                 raise ValueError(
@@ -275,8 +275,8 @@ class Version(object):
             ', partial=True' if self.partial else '',
         )
 
-    @classmethod
-    def _comparison_functions(cls, partial=False):
+    @staticmethod
+    def _comparison_functions(partial=False):
         """Retrieve comparison methods to apply on version components.
 
         This is a private API.
