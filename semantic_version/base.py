@@ -396,7 +396,7 @@ class Version(object):
         return self.__compare_helper(other, lambda x: x >= 0, notimpl_target=False)
 
 
-class SpecItem(object):
+class VersionReq(object):
     """A requirement specification."""
 
     KIND_ANY = '*'
@@ -501,14 +501,16 @@ class SpecItem(object):
 
 
 class Spec(object):
-    def __init__(self, *specs_strings):
-        subspecs = [self.parse(spec) for spec in specs_strings]
-        self.specs = sum(subspecs, ())
+    def __init__(self, specs):
+        self.specs = specs
 
     @classmethod
-    def parse(self, specs_string):
-        spec_texts = specs_string.split(',')
-        return tuple(SpecItem.parse(spec_text) for spec_text in spec_texts)
+    def from_strs(cls, strs):
+        specs = []
+        for s in strs:
+            spec_texts = specs_string.split(',')
+            specs.extend(SpecItem.parse(spec_text) for spec_text in spec_texts)
+        return cls(specs)
 
     def match(self, version):
         """Check whether a Version satisfies the Spec."""
