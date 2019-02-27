@@ -117,78 +117,7 @@ We now want to "solve" the dependency tree. The solution should:
 - Use each pkg only once _if possible_. Note that for some build systems this
   is a hard error (i.e. python).
 
-We therefore first try to find a solution that only uses one pkg version per
-pkg. This can only be accomplished recursively, choosing the largest version
-of each. For performance note:
-- All lists are reverse-sorted so the max can be found in O(1)
-- All objects are persistent/functional data structures so can be cloned/"mutated"
-  cheaply in each branch.
-
-We will use dynamic programming and backtracking strategies to solve this
-problem, taking the greedy assumption that we can always use the largest
-packages and only one pkg, and backtracking when that is not the case.
-
-We continuously clone and trim pkgsVersionsDeps, removing fields
-that didn't work in our branch. This requires a data structure
-that can handle such operations without consuming too much memory,
-like the [im](https://crates.rs/crates/im) crate in rust.
-or [pyrsistent](python https://github.com/tobgu/pyrsistent)
-
-```python
-
-def solve_dependencies(pkgsVersionsDeps, pkgFullKey):
-    pkg, version = pkgFullKey
-
-    if version not in pkgsVersionsDeps[pkg]:
-        # A previous step removed this
-        raise NotSolved()
-
-    # Hmm... I think this has to be a stack of some kind.
-    # - If we cannot solve a (dep, version) then we shouldn't
-    #   try again (mark it in failed maybe?)
-    # - However, if we broke early because we _thought_ it was
-    #   solved then we shouldn't bail that fast...
-    for dep, versions in pkgsVersionsDeps[pkg][version]:
-
-        # keep attempting to select the highest version
-        solvedDep = False
-        for version in versions:
-            depFullKey = (dep, version)
-
-            # insert a version of dep with the pinned version.
-            reducedDepVersions = {
-                version: pkgsVersionsDeps[dep][version]
-            }
-
-            # note: creates a new pkgsVersionsDeps
-            reducedVersionsAvailble = pkgsVersionsDeps.insert(dep, reducedDepVerions)
-
-            try:
-                # Recurse to solve dep's dependencies
-                pkgsVersionsDeps = solve_dependencies(
-                    failed,
-                    reducedVersionsAvailable,
-                    depFullKey
-                )
-                solvedDep = True
-                break  # solved this dependency, try to solve the others.
-            except NotSolved:
-                failed.add(depFullKey)
-                pass # try again with a lower version
-
-        if not solvedDep:
-            raise NotSolved()
-
-    # managed to solve this tree
-    return pkgsVersionsDeps
-
-
-```
-
-I feel like the above is going all wrong and isn't what I set out to do at all.
-The basic idea was to just walk the tree and keep reducing hashsets.
-
-I have a set of pkgs with what versions exist (period!)
+We have a set of pkgs with all the relevant versions that exist.
 
 ```
 pkgsVersions = {
@@ -203,8 +132,8 @@ I then walk the dependency tree, removing items from these sets as I go.
 
 ```
 for pkg, pkgVersionsDeps in pkgsVersionsDeps.items():
-    for version, deps in pkgVersionsDeps.items():
-        for dep, depVersions in deps.items():
+    for version, depsVersions in pkgVersionsDeps.items():
+        for dep, depVersions in depsVersions.items():
             # only keep versions that are acceptible to this dep
             reduced = pkgsVersions[dep].union(depVersions)
             if not reduced:
