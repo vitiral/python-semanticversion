@@ -403,8 +403,8 @@ class SpecItemTestCase(unittest.TestCase):
 
     def test_invalids(self):
         for invalid in self.invalids:
-            with self.assertRaises(ValueError, msg="SpecItem(%r) should be invalid" % invalid):
-                _v = base.SpecItem(invalid)
+            with self.assertRaises(ValueError, msg="SpecItem.parse(%r) should be invalid" % invalid):
+                _v = base.SpecItem.parse(invalid)
 
     components = {
         '==0.1.0': (base.SpecItem.KIND_EQUAL, 0, 1, 0, None, None),
@@ -428,7 +428,7 @@ class SpecItemTestCase(unittest.TestCase):
     def test_components(self):
         for spec_text, components in self.components.items():
             kind, major, minor, patch, prerelease, build = components
-            spec = base.SpecItem(spec_text)
+            spec = base.SpecItem.parse(spec_text)
 
             self.assertEqual(kind, spec.kind)
             self.assertEqual(major, spec.spec.major)
@@ -530,7 +530,7 @@ class SpecItemTestCase(unittest.TestCase):
 
     def test_matches(self):
         for spec_text, versions in self.matches.items():
-            spec = base.SpecItem(spec_text)
+            spec = base.SpecItem.parse(spec_text)
             matching, failing = versions
 
             for version_text in matching:
@@ -543,19 +543,19 @@ class SpecItemTestCase(unittest.TestCase):
                     "%r should not match %r" % (version, spec))
 
     def test_equality(self):
-        spec1 = base.SpecItem('==0.1.0')
-        spec2 = base.SpecItem('==0.1.0')
+        spec1 = base.SpecItem.parse('==0.1.0')
+        spec2 = base.SpecItem.parse('==0.1.0')
         self.assertEqual(spec1, spec2)
         self.assertFalse(spec1 == '==0.1.0')
 
     def test_to_string(self):
-        spec = base.SpecItem('==0.1.0')
+        spec = base.SpecItem.parse('==0.1.0')
         self.assertEqual('==0.1.0', str(spec))
         self.assertEqual(base.SpecItem.KIND_EQUAL, spec.kind)
 
     def test_hash(self):
         self.assertEqual(1,
-            len(set([base.SpecItem('==0.1.0'), base.SpecItem('==0.1.0')])))
+            len(set([base.SpecItem.parse('==0.1.0'), base.SpecItem.parse('==0.1.0')])))
 
 
 class CoerceTestCase(unittest.TestCase):
@@ -596,7 +596,7 @@ class SpecTestCase(unittest.TestCase):
             self.assertEqual(specs, [str(spec) for spec in spec_list])
 
             for spec_text in specs:
-                self.assertTrue(repr(base.SpecItem(spec_text)) in repr(spec_list))
+                self.assertTrue(repr(base.SpecItem.parse(spec_text)) in repr(spec_list))
 
     split_examples = {
         ('>=0.1.1', '<0.1.2', '!=0.1.1+build1'): ['>=0.1.1', '<0.1.2', '!=0.1.1+build1'],
@@ -612,7 +612,7 @@ class SpecTestCase(unittest.TestCase):
             self.assertEqual(spec_list, base.Spec(','.join(spec_list_texts)))
 
             for spec_text in specs:
-                self.assertTrue(repr(base.SpecItem(spec_text)) in repr(spec_list))
+                self.assertTrue(repr(base.SpecItem.parse(spec_text)) in repr(spec_list))
 
     matches = {
         # At least 0.1.1 including pre-releases, less than 0.1.2 excluding pre-releases

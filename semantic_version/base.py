@@ -508,7 +508,7 @@ class Spec(object):
     @classmethod
     def parse(self, specs_string):
         spec_texts = specs_string.split(',')
-        return tuple(SpecItem(spec_text) for spec_text in spec_texts)
+        return tuple(SpecItem.parse(spec_text) for spec_text in spec_texts)
 
     def match(self, version):
         """Check whether a Version satisfies the Spec."""
