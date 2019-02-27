@@ -81,4 +81,4 @@ class SpecField(SemVerField):
             return value
         if isinstance(value, base.Spec):
             return value
-        return base.Spec(value)
+        return base.Spec.from_strs(value)

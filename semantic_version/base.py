@@ -396,7 +396,7 @@ class Version(object):
         return self.__compare_helper(other, lambda x: x >= 0, notimpl_target=False)
 
 
-class VersionReq(object):
+class SpecItem(object):
     """A requirement specification."""
 
     KIND_ANY = '*'
@@ -558,7 +558,7 @@ def compare(v1, v2):
 
 
 def match(spec, version):
-    return Spec(spec).match(Version.parse(version))
+    return Spec.from_strs(spec).match(Version.parse(version))
 
 
 def validate(version_string):
