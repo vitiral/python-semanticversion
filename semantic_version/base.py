@@ -74,6 +74,9 @@ class Version(object):
     partial_version_re = re.compile(r'^(\d+)(?:\.(\d+)(?:\.(\d+))?)?(?:-([0-9a-zA-Z.-]*))?(?:\+([0-9a-zA-Z.-]*))?$')
 
     def __init__(self, major, minor, patch, prerelease=(), build=(), partial=False):
+        # Note: if partial is True, prerelease and build may or may not be None.
+        # It's pretty confusing, but if partial is False then they must be ()
+
         self.major = major
         self.minor = minor
         self.patch = patch
@@ -423,7 +426,7 @@ class VersionReq(object):
         self.version = version
 
     @classmethod
-    def parse(cls, requirement_string):
+    def parse(cls, requirement_string, partial=True):
         if not requirement_string:
             raise ValueError("Invalid empty requirement specification: %r" % requirement_string)
 
@@ -440,14 +443,14 @@ class VersionReq(object):
         if kind in cls.KIND_ALIASES:
             kind = cls.KIND_ALIASES[kind]
 
-        spec = Version.parse(version, partial=True)
-        if spec.build is not None and kind not in (cls.KIND_EQUAL, cls.KIND_NEQ):
+        version = Version.parse(version, partial=partial)
+        if partial and version.build is not None and kind not in (cls.KIND_EQUAL, cls.KIND_NEQ):
             raise ValueError(
-                "Invalid requirement specification %r: build numbers have no ordering."
+                "Invalid requirement version %r: build numbers have no ordering."
                 % requirement_string
             )
 
-        return cls(kind, spec)
+        return cls(kind, version)
 
     def match(self, version):
         if self.kind == self.KIND_ANY:
@@ -509,8 +512,8 @@ class VersionEdges(object):
     but rather to pass these constraints to a system which can return
     versions which match the requirements.
 
-    When these edges are _retrieved_, the retriever (i.e. server) must respond
-    like so:
+    It is expected that when these edges are _retrieved_, the retriever (i.e.
+    server) must respond like so:
     - VersionGte: must return the _exact version_. This represents a lower edge
       and could equivalently have been VersionEq
     - VersionLt: must return the version _directly below_ the version specified.
@@ -530,35 +533,40 @@ class VersionEdges(object):
     - KIND_COMPATIBLE is converted similar to CARET
     """
     def __init__(self):
-        self.reqs_lt = []
-        self.reqs_gte = []
+        self.reqs_lt = set()
+        self.reqs_gte = set()
 
     def append(self, req):
         """Note: Appending a req can cause up to two reqs being added."""
-        a_lt = self.reqs_lt.append
-        a_gte = self.reqs_gte.append
+        version = req.version
+        if version and version.partial:
+            # partial requirement versions change the hash since
+            # prerelease and build get set to different things.
+            raise TypeError("Partial req versions are not allowed")
+        a_lt = self.reqs_lt.add
+        a_gte = self.reqs_gte.add
 
         if req.kind == req.KIND_LT:
-            a_lt(VersionLt(req.version))
+            a_lt(VersionLt(version))
 
         elif req.kind == req.KIND_GTE:
-            a_gte(VersionGte(req.version))
+            a_gte(VersionGte(version))
 
         elif req.kind == req.KIND_EQUAL or req.kind == req.KIND_SHORTEQ:
-            a_gte(VersionGte(req.version))
+            a_gte(VersionGte(version))
 
         elif req.kind == req.KIND_NEQ:
-            a_lt(VersionLt(req.version))
-            a_gte(VersionGte(req.version.next_patch()))
+            a_lt(VersionLt(version))
+            a_gte(VersionGte(version.next_patch()))
 
         elif req.kind == req.KIND_ANY:
             a_gte(VersionGte(Version(0, 0, 1)))
 
         elif req.kind == req.KIND_LTE:
-            a_lt(VersionLt(req.version.next_patch()))
+            a_lt(VersionLt(version.next_patch()))
 
         elif req.kind == req.KIND_GT:
-            a_gte(VersionGte(req.version.next_patch()))
+            a_gte(VersionGte(version.next_patch()))
 
         # TODO: finish these
         # elif req.kind == req.KIND_CARET:
