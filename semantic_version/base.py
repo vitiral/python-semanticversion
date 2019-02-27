@@ -500,11 +500,97 @@ class VersionReq(object):
         return hash((self.kind, self.version))
 
 
+class VersionEdges(object):
+    """The _potentially_ required versions in a constraint solving system.
+
+    This is (essentially) collection of VersionReq's that have been converted
+    to their "edges" VersionLt or VersionGte.
+
+    This object consumes VersionReqs, converting them to their simpler form
+    and removing duplicates. The purpose is _not_ to filter on these directly,
+    but rather to pass these constraints to a system which can return
+    versions which match the requirements.
+
+    When these edges are _retrieved_, the retriever (i.e. server) must respond
+    like so:
+    - VersionGte: must return the _exact version_. This represents a lower edge
+      and could equivalently have been VersionEq
+    - VersionLt: must return the version _directly below_ the version specified.
+      If that version has been yanked it must still be returned, but the server
+      has the option of returning additional version.
+
+    When spec's are added, they are converted to their graph edge.  All KINDs
+    are converted to one of Eq, LT or GTE
+    - ANY is converted to ``>=0.0.1``
+    - EQ becomes GTE ``==1.2.3 becomes >=1.2.3``
+    - GT becomes GTE the bumped patch. ``>1.2.3 becomes >=1.2.4``
+    - LTE becomes LT the bumped patch. ``<=2.0.0 becomes <2.0.1``
+    - EMPTY is converted to CARET (which is converted)
+    - NEQ is converted to two ReqVersions: ``!=1.2.3 becomes <1.2.3,>=1.2.4``
+    - CARET is converted to two ReqVersions: ``^1.2.3 becomes >=1.2.3,<2.0.0``
+    - TILTE is converted to two ReqVersions: ``~1.2.3 becomes >=1.2.3,<1.3.0``
+    - KIND_COMPATIBLE is converted similar to CARET
+    """
+    def __init__(self, req_items=None):
+        self.reqs_lt = []
+        self.reqs_gte = []
+        for req_item in req_items or []:
+            self.append(req_item)
+
+    def append(self, req):
+        """Note: Appending a req can cause up to two reqs being added."""
+        a_lt = self.req_lt.append
+        a_gte = self.req_gte.append
+
+        if req.kind == req.KIND_LT:
+            a_lt(SpecLt(req.version))
+
+        elif req.kind == req.KIND_GTE:
+            a_gte(SpecGte(req.version))
+
+        elif req.kind == req.KIND_EQ:
+            a_gte(SpecGte(req.version))
+            a_lt(SpecLt(req.version.next_patch()))
+
+        elif req.kind == req.KIND_ANY:
+            a_gte(SpecGte(Version(0, 0, 1)))
+
+        elif req.kind == req.KIND_LTE:
+            a_lt(SpecLt(req.version.next_patch()))
+
+        elif req.kind == req.KIND_GT:
+            a_gte(SpecGte(req.version.next_patch()))
+
+        elif req.kind == req.KIND_NEQ:
+            a_lt(SpecLt(req.version))
+            a_gte(SpecGte(req.version.next_patch()))
+
+        # TODO: finish these
+        # elif req.kind == req.KIND_CARET:
+        #     if req.req.major != 0:
+        #         upper = req.req.next_major()
+        #     elif req.req.minor != 0:
+        #         upper = req.req.next_minor()
+        #     else:
+        #         upper = req.req.next_patch()
+        #     return req.req <= version < upper
+        # elif req.kind == req.KIND_TILDE:
+        #     return req.req <= version < req.req.next_minor()
+        # elif req.kind == req.KIND_COMPATIBLE:
+        #     if req.req.patch is not None:
+        #         upper = req.req.next_minor()
+        #     else:
+        #         upper = req.req.next_major()
+        #     return req.req <= version < upper
+        else:  # pragma: no cover
+            raise ValueError('Unexpected match kind: %r' % req.kind)
+
+
 class Spec(object):
-    def __init__(self, specs):
-        if not isinstance(specs, tuple):
-            specs = tuple(specs)
-        self.version = specs
+    def __init__(self, requirements):
+        if not isinstance(requirements, tuple):
+            requirements = tuple(requirements)
+        self.requirements = requirements
 
     @classmethod
     def from_str(cls, *strs):
@@ -518,7 +604,7 @@ class Spec(object):
 
     def match(self, version):
         """Check whether a Version satisfies the Spec."""
-        return all(spec.match(version) for spec in self.version)
+        return all(spec.match(version) for spec in self.requirements)
 
     def filter(self, versions):
         """Filter an iterable of versions satisfying the Spec."""
@@ -539,22 +625,22 @@ class Spec(object):
         return False
 
     def __iter__(self):
-        return iter(self.version)
+        return iter(self.requirements)
 
     def __str__(self):
-        return ','.join(str(spec) for spec in self.version)
+        return ','.join(str(spec) for spec in self.requirements)
 
     def __repr__(self):
-        return '<Spec: %r>' % (self.version,)
+        return '<Spec: %r>' % (self.requirements,)
 
     def __eq__(self, other):
         if not isinstance(other, Spec):
             return NotImplemented
 
-        return set(self.version) == set(other.version)
+        return set(self.requirements) == set(other.requirements)
 
     def __hash__(self):
-        return hash(self.version)
+        return hash(self.requirements)
 
 
 class VersionLt(VersionReq):
