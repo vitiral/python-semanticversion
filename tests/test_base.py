@@ -589,7 +589,7 @@ class SpecTestCase(unittest.TestCase):
 
     def test_parsing(self):
         for spec_list_text, specs in self.examples.items():
-            spec_list = base.Spec.from_strs(spec_list_text)
+            spec_list = base.Spec.from_str(spec_list_text)
 
             self.assertEqual(spec_list_text, str(spec_list))
             self.assertNotEqual(spec_list_text, spec_list)
@@ -605,11 +605,11 @@ class SpecTestCase(unittest.TestCase):
 
     def test_parsing_split(self):
         for spec_list_texts, specs in self.split_examples.items():
-            spec_list = base.Spec.from_strs(*spec_list_texts)
+            spec_list = base.Spec.from_str(*spec_list_texts)
 
             self.assertEqual(','.join(spec_list_texts), str(spec_list))
             self.assertEqual(specs, [str(spec) for spec in spec_list])
-            self.assertEqual(spec_list, base.Spec.from_strs(','.join(spec_list_texts)))
+            self.assertEqual(spec_list, base.Spec.from_str(','.join(spec_list_texts)))
 
             for spec_text in specs:
                 self.assertTrue(repr(base.SpecItem.parse(spec_text)) in repr(spec_list))
@@ -632,7 +632,7 @@ class SpecTestCase(unittest.TestCase):
 
     def test_matches(self):
         for spec_list_text, versions in self.matches.items():
-            spec_list = base.Spec.from_strs(spec_list_text)
+            spec_list = base.Spec.from_str(spec_list_text)
             matching, failing = versions
 
             for version_text in matching:
@@ -651,18 +651,18 @@ class SpecTestCase(unittest.TestCase):
 
     def test_equality(self):
         for spec_list_text in self.examples:
-            slist1 = base.Spec.from_strs(spec_list_text)
-            slist2 = base.Spec.from_strs(spec_list_text)
+            slist1 = base.Spec.from_str(spec_list_text)
+            slist2 = base.Spec.from_str(spec_list_text)
             self.assertEqual(slist1, slist2)
             self.assertFalse(slist1 == spec_list_text)
 
     def test_filter_empty(self):
-        s = base.Spec.from_strs('>=0.1.1')
+        s = base.Spec.from_str('>=0.1.1')
         res = tuple(s.filter(()))
         self.assertEqual((), res)
 
     def test_filter_incompatible(self):
-        s = base.Spec.from_strs('>=0.1.1,!=0.1.4')
+        s = base.Spec.from_str('>=0.1.1,!=0.1.4')
         res = tuple(s.filter([
             base.Version.parse('0.1.0'),
             base.Version.parse('0.1.4'),
@@ -671,7 +671,7 @@ class SpecTestCase(unittest.TestCase):
         self.assertEqual((), res)
 
     def test_filter_compatible(self):
-        s = base.Spec.from_strs('>=0.1.1,!=0.1.4,<0.2.0')
+        s = base.Spec.from_str('>=0.1.1,!=0.1.4,<0.2.0')
         res = tuple(s.filter([
             base.Version.parse('0.1.0'),
             base.Version.parse('0.1.1'),
@@ -691,11 +691,11 @@ class SpecTestCase(unittest.TestCase):
         self.assertEqual(expected, res)
 
     def test_select_empty(self):
-        s = base.Spec.from_strs('>=0.1.1')
+        s = base.Spec.from_str('>=0.1.1')
         self.assertIsNone(s.select(()))
 
     def test_select_incompatible(self):
-        s = base.Spec.from_strs('>=0.1.1,!=0.1.4')
+        s = base.Spec.from_str('>=0.1.1,!=0.1.4')
         res = s.select([
             base.Version.parse('0.1.0'),
             base.Version.parse('0.1.4'),
@@ -704,7 +704,7 @@ class SpecTestCase(unittest.TestCase):
         self.assertIsNone(res)
 
     def test_select_compatible(self):
-        s = base.Spec.from_strs('>=0.1.1,!=0.1.4,<0.2.0')
+        s = base.Spec.from_str('>=0.1.1,!=0.1.4,<0.2.0')
         res = s.select([
             base.Version.parse('0.1.0'),
             base.Version.parse('0.1.1'),
@@ -718,11 +718,11 @@ class SpecTestCase(unittest.TestCase):
         self.assertEqual(base.Version.parse('0.1.5'), res)
 
     def test_contains(self):
-        self.assertFalse('ii' in base.Spec.from_strs('>=0.1.1'))
+        self.assertFalse('ii' in base.Spec.from_str('>=0.1.1'))
 
     def test_hash(self):
         self.assertEqual(1,
-            len(set([base.Spec.from_strs('>=0.1.1'), base.Spec.from_strs('>=0.1.1')])))
+            len(set([base.Spec.from_str('>=0.1.1'), base.Spec.from_str('>=0.1.1')])))
 
 
 if __name__ == '__main__':  # pragma: no cover

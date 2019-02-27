@@ -505,11 +505,13 @@ class Spec(object):
         self.specs = specs
 
     @classmethod
-    def from_strs(cls, strs):
+    def from_str(cls, *strs):
         specs = []
-        for s in strs:
-            spec_texts = specs_string.split(',')
-            specs.extend(SpecItem.parse(spec_text) for spec_text in spec_texts)
+        for multi_spc_strs in strs:
+            specs.extend(
+                SpecItem.parse(spec_str) for spec_str
+                in multi_spc_strs.split(',')
+            )
         return cls(specs)
 
     def match(self, version):
@@ -558,7 +560,7 @@ def compare(v1, v2):
 
 
 def match(spec, version):
-    return Spec.from_strs(spec).match(Version.parse(version))
+    return Spec.from_str(spec).match(Version.parse(version))
 
 
 def validate(version_string):
