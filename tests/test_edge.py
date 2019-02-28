@@ -48,7 +48,7 @@ pkgsVersionsSpecsSimple = {
     pE: {
         V(mj, mn, 0): {}
         for mj in range(1, 4)
-        for mn in range(0, 10)
+        for mn in range(0, 10, 3)
     },
 
 }
