@@ -4,6 +4,7 @@ from pprint import pprint as pp
 
 from semantic_version import base
 from semantic_version import edge
+from sortedcontainers import SortedDict
 
 def parse_ex(version_req_str):
     """Helper function to parse with partial=False."""
@@ -12,6 +13,7 @@ def parse_ex(version_req_str):
 # Some shorthands for the test setup
 V = base.Version
 Vp = base.Version.parse
+R = base.VersionReq.parse
 S = base.Spec.from_str
 
 pA = "pkgA"
@@ -24,35 +26,57 @@ pF = "pkgF"
 
 # Contains the "server" implementation (not the edges)"
 pkgsVersionsSpecsSimple = {
-    pA: {
+    pA: SortedDict({
         V(2, 3, 0): {
             pB: S("^1.0.0"),
-            pE: S(">=1.0, <3.0"),
+            pE: S(">=1.0.0, <3.0.0"),
         },
-    },
+    }),
 
-    pB: {
+    pB: SortedDict({
         V(1, 0, 0): {
-            pE: S(">=1.2, <2.0"),
+            pE: S(">=1.2.0, <2.0.0"),
         },
 
         V(1, 1, 0): {
-            pE: S(">=1.0, <2.0"),
+            pE: S(">=1.0.0, <2.0.0"),
         },
 
         V(1, 2, 0): {
-            pE: S(">=1.5, <2.5"),
+            pE: S(">=1.5.0, <2.5.0"),
         }
-    },
+    }),
 
-    pE: {
+    pE: SortedDict({
         V(mj, mn, 0): {}
         for mj in range(1, 4)
         for mn in range(0, 10, 3)
-    },
-
+    }),
 }
 
+def get_pkg_edge(db, pkg, edge):
+    """Get pkg version which matches the edge from ``db``"""
+    pkgVersions = db.get(pkg)
+    if pkgVersions is None:
+        return None
+
+    if isinstance(edge, EdgeLt):
+        # go from highest -> lowest looking for match
+        for version in reversed(pkgVersions):
+            if edge.match(version):
+                return version
+
+    elif isinstance(edge, EdgeGt):
+        # go from lowest -> highest looking for match
+        for version in pkgVersions:
+            if edge.match(version):
+                return version
+
+    return None
+
+
+
+print("\n\npkgsVersionsSpecsSimple:")
 pp(pkgsVersionsSpecsSimple)
 
 
@@ -107,5 +131,12 @@ class EdgesTestCase(unittest.TestCase):
         assert e.reqs_gte == {parse_ex(">=2.3.100")}
         assert e.reqs_lt == set()
 
+    def test_initiailze_simple(self):
+        pkgsSpecs = {
+            pA: pkgsVersionsSpecsSimple[pA],
+        }
+        edges = edge.initialize_edges(pkgsSpecs)
 
+        assert edges[pA][2, 3, 0][pB].reqs_lt == {R("<2.3.0")}
+        assert edges[pA][2, 3, 0][pB].reqs_gt == {R(">=1.0.0")}
 

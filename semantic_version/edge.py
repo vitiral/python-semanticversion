@@ -6,6 +6,21 @@ def solve(pkgsVersionsDeps, root):
     state.attempt_pkg_traversal(root)
     return state.pkgsLocked
 
+
+def initialize_edges(pkgsVersionsSpecs):
+    """Helper function to initialize a map of edges."""
+    return {
+        pkg: {
+            version: {
+                dep: Edges.from_specs(specs)
+                for (dep, specs) in depsSpecs.items()
+            }
+            for (version, depsSpecs) in pkgVersionsSpecs.items()
+        }
+        for (pkg, pkgVersionsSpecs) in pkgsVersionsSpecs.items()
+    }
+
+
 class NotSolved(Exception):
     """No solution was found in this branch"""
 
@@ -57,8 +72,20 @@ class Edges(object):
         self.reqs_lt = set()
         self.reqs_gte = set()
 
-    def append(self, req):
+    @classmethod
+    def from_specs(cls, specs):
+        edges = cls()
+        for spec in specs:
+            edges.append(spec)
+        return edges
+
+    def append(self, reqOrSpec):
         """Note: Appending a req can cause up to two reqs being added."""
+        if isinstance(reqOrSpec, base.Spec):
+            for req in reqOrSpec.requirements:
+                self.append(req)
+            return
+        req = reqOrSpec
 
         # TODO: the "next patch" stuff here may want to preserve builds, etc in
         # some way??
@@ -118,6 +145,11 @@ class Edges(object):
         else:  # pragma: no cover
             raise ValueError('Unexpected match kind: %r' % kind)
 
+    def __iter__(self):
+        return itertools.chain(
+            self.reqs_lt,
+            self.reqs_gte,
+        )
 
 def State(object):
     def __init__(self, pkgsVersionsDeps):
