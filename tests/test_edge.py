@@ -205,4 +205,5 @@ class EdgesTestCase(unittest.TestCase):
         )
 
         solved = edge.solve(pkgsVersionsDeps, pA)
+        import pdb; pdb.set_trace()
         assert not solved
