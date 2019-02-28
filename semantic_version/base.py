@@ -501,96 +501,6 @@ class VersionReq(object):
         return hash((self.kind, self.version))
 
 
-class VersionEdges(object):
-    """The _potentially_ required versions in a constraint solving system.
-
-    This is (essentially) collection of VersionReq's that have been converted
-    to their "edges" VersionLt or VersionGte.
-
-    This object consumes VersionReqs, converting them to their simpler form
-    and removing duplicates. The purpose is _not_ to filter on these directly,
-    but rather to pass these constraints to a system which can return
-    versions which match the requirements.
-
-    When spec's are added, they are converted to their graph edge.  All KINDs
-    are converted to one of Eq, LT or GTE
-    - ANY is converted to ``>=0.0.1``
-    - EQ becomes GTE ``==1.2.3 becomes >=1.2.3``
-    - NEQ is exclusive: ``!=1.2.3 becomes <1.2.3,>=1.2.4``
-    - GT becomes GTE the bumped patch. ``>1.2.3 becomes >=1.2.4``
-    - LTE becomes LT the bumped patch. ``<=2.0.0 becomes <2.0.1``
-    - EMPTY is converted to CARET (which is converted)
-    - CARET is converted to two ReqVersions: ``^1.2.3 becomes >=1.2.3,<2.0.0``
-    - TILTE is converted to two ReqVersions: ``~1.2.3 becomes >=1.2.3,<1.3.0``
-    - KIND_COMPATIBLE is converted similar to CARET
-    """
-    def __init__(self):
-        self.reqs_lt = set()
-        self.reqs_gte = set()
-
-    def append(self, req):
-        """Note: Appending a req can cause up to two reqs being added."""
-
-        # TODO: the "next patch" stuff here may want to preserve builds, etc in
-        # some way??
-        version = req.version
-        if version and version.partial:
-            # partial requirement versions change the hash since
-            # prerelease and build get set to different things.
-            raise TypeError("Partial req versions are not allowed")
-        kind = req.kind
-        a_lt = self.reqs_lt.add
-        a_gte = self.reqs_gte.add
-
-        if kind == req.KIND_LT:
-            a_lt(VersionLt(version))
-
-        elif kind == req.KIND_GTE:
-            a_gte(VersionGte(version))
-
-        elif kind == req.KIND_EQUAL or kind == req.KIND_SHORTEQ:
-            a_gte(VersionGte(version))
-
-        elif kind == req.KIND_NEQ:
-            a_lt(VersionLt(version))
-            a_gte(VersionGte(version.next_patch()))
-
-        elif kind == req.KIND_ANY:
-            a_gte(VersionGte(Version(0, 0, 1)))
-
-        elif kind == req.KIND_LTE:
-            a_lt(VersionLt(version.next_patch()))
-
-        elif kind == req.KIND_GT:
-            a_gte(VersionGte(version.next_patch()))
-
-        elif kind == req.KIND_CARET:
-            if version.major != 0:
-                upper = version.next_major()
-            elif version.minor != 0:
-                upper = version.next_minor()
-            else:
-                upper = version.next_patch()
-            a_gte(VersionGte(version))
-            a_lt(VersionLt(upper))
-
-        elif kind == req.KIND_TILDE:
-            a_gte(VersionGte(version))
-            a_lt(VersionLt(version.next_minor()))
-
-        elif kind == req.KIND_COMPATIBLE:
-            if version.patch is not None:
-                upper = version.next_minor()
-            else:
-                upper = version.next_major()
-            a_gte(VersionGte(version))
-            a_lt(VersionLt(upper))
-
-        else:  # pragma: no cover
-            raise ValueError('Unexpected match kind: %r' % kind)
-
-
-
 class Spec(object):
     def __init__(self, requirements):
         if not isinstance(requirements, tuple):
@@ -646,26 +556,6 @@ class Spec(object):
 
     def __hash__(self):
         return hash(self.requirements)
-
-
-class VersionLt(VersionReq):
-    def __init__(self, version):
-        self.kind = self.KIND_LT
-        self.version = version
-
-    def __cmp__(self, other):
-        assert isinstance(other, VersionLt)
-        return self.version.__cmp__(other.version)
-
-
-class VersionGte(VersionReq):
-    def __init__(self, version):
-        self.kind = self.KIND_GTE
-        self.version = version
-
-    def __cmp__(self, other):
-        assert isinstance(other, VersionGte)
-        return self.version.__cmp__(other.version)
 
 
 def compare(v1, v2):
