@@ -135,7 +135,8 @@ class EdgesTestCase(unittest.TestCase):
         pkgsSpecs = {
             pA: pkgsVersionsSpecsSimple[pA],
         }
-        edges = edge.initialize_edges(pkgsSpecs)
+        edges = edge.PkgsVersionDepsEdges()
+        edges.update(pkgsSpecs)
 
         assert edges[pA][V(2, 3, 0)][pB].reqs_lt == {R("<2.0.0")}
         assert edges[pA][V(2, 3, 0)][pB].reqs_gte == {R(">=1.0.0")}

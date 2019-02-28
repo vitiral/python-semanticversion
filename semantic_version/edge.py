@@ -76,9 +76,12 @@ class Edges(object):
     @classmethod
     def from_specs(cls, specs):
         edges = cls()
-        for spec in specs:
-            edges.append(spec)
+        self.extend(specs)
         return edges
+
+    def extend(self, specs):
+        for spec in specs:
+            self.append(spec)
 
     def append(self, reqOrSpec):
         """Note: Appending a req can cause up to two reqs being added."""
@@ -156,6 +159,63 @@ class Edges(object):
             self.reqs_lt,
             self.reqs_gte,
         )
+
+class PkgsVersionDepsMap(object):
+    """A dictionary tree representing `pkgs -> version -> dependencies -> container`.
+
+    The container is typically `Edges` or an OrderedSet.
+
+    This is the common format for representing edges and (eventually) versions.
+    """
+
+    def __init__(self):
+        self._map = {}
+
+    def new_function(self):
+        raise NotImplementedError()
+
+    def extend_function(self, a):
+        raise NotImplementedError()
+
+    def __getitem__(self, key):
+        return self._map[key]
+
+    def update(self, pkgsVersionsMap):
+        for (pkg, pkgVersionsMap) in pkgsVersionsMap.items():
+            if pkg not in self._map:
+                self._map[pkg] = {}
+            sPkgVersionsMap = self._map[pkg]
+
+            for (version, depsMap) in pkgVersionsMap.items():
+                if version not in sPkgVersionsMap:
+                    sPkgVersionsMap[version] = {}
+                sPkgDepsMap = sPkgVersionsMap[version]
+
+                for (dep, specs) in depsMap.items():
+                    if dep not in sPkgDepsMap:
+                        sPkgDepsMap[dep] = self.new_function()
+                    self.extend_function(sPkgDepsMap[dep], specs)
+
+
+class PkgsVersionDepsEdges(PkgsVersionDepsMap):
+    def new_function(self):
+        return Edges()
+
+    def extend_function(self, edges, a):
+        Edges.extend(edges, a)
+
+
+class PkgsVersionDepsVersions(PkgsVersionDepsMap):
+    def __init__(self):
+        super(SortedSet.__init__, extend)
+
+    def new_function(self):
+        return SortedSet()
+
+    def extend_function(self, sortedSet, a):
+        next((sortedSet.add(v) for v in a), None)
+
+
 
 def State(object):
     def __init__(self, pkgsVersionsDeps):
