@@ -5,6 +5,7 @@ from pprint import pprint as pp
 from semantic_version import base
 from semantic_version import edge
 from sortedcontainers import SortedDict
+from sortedcontainers import SortedSet
 
 def parse_ex(version_req_str):
     """Helper function to parse with partial=False."""
@@ -92,6 +93,12 @@ pp(pkgsVersionsSpecsSimple)
 
 
 class EdgesTestCase(unittest.TestCase):
+    @staticmethod
+    def pkgVersionsSpecsSimpleRetriever(pkg, edges):
+        return get_pkg_edge_versions(
+            pkgsVersionsSpecsSimple,
+            pkg, edges)
+
     def test_append_gte(self):
         e = edge.Edges()
         req = parse_ex(">=1.3.4")
@@ -166,10 +173,6 @@ class EdgesTestCase(unittest.TestCase):
         assert edges[pB].reqs_gte == {R(">=0.5.0"), R(">=1.0.0")}
 
     def test_retrieve_simple(self):
-        def my_retriever(pkg, edges):
-            return get_pkg_edge_versions(
-                pkgsVersionsSpecsSimple,
-                pkg, edges)
 
         pkgsSpecs = {
             pA: pkgsVersionsSpecsSimple[pA],
@@ -178,7 +181,7 @@ class EdgesTestCase(unittest.TestCase):
         edges.update(pkgsSpecs)
 
         pkgVersions = edge.retrieve_edge_versions(
-            my_retriever,
+            self.pkgVersionsSpecsSimpleRetriever,
             edges)
 
         assert pkgVersions == {
@@ -186,4 +189,20 @@ class EdgesTestCase(unittest.TestCase):
             pE: {V(1, 0, 0), V(2, 9, 0)},
         }
 
+    def test_complete(self):
+        edges = edge.PkgsEdges()
+        edges.update(pkgsVersionsSpecsSimple)
 
+        pkgVersions = edge.retrieve_edge_versions(
+            self.pkgVersionsSpecsSimpleRetriever,
+            edges)
+
+        pkgsVersionsDeps = edge.PkgsVersionsDepsVersions()
+        pkgsVersionsDeps.filter_update(
+            pA,
+            pkgsVersionsSpecsSimple,
+            pkgVersions,
+        )
+
+        solved = edge.solve(pkgsVersionsDeps, pA)
+        assert not solved

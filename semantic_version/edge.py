@@ -1,6 +1,8 @@
 import itertools
 
 from . import base
+from sortedcontainers import SortedDict
+from sortedcontainers import SortedSet
 
 def solve(pkgsVersionsDeps, root):
     state = State(pkgsVersionsDeps)
@@ -160,10 +162,11 @@ class Edges(object):
             self.reqs_gte,
         )
 
+
 class PkgsVersionDepsMap(dict):
     """A dictionary tree representing `pkgs -> version -> dependencies -> container`.
 
-    The container is typically `Edges` or an OrderedSet.
+    The container is typically `Edges` or an SortedSet.
 
     This is the common format for representing edges and (eventually) versions.
     """
@@ -190,6 +193,43 @@ class PkgsVersionDepsMap(dict):
                         sPkgDepsMap[dep] = self.new_function()
                     self.extend_function(sPkgDepsMap[dep], specs)
 
+
+class PkgsVersionsDepsVersions(dict):
+    def filter_update(self, root, pkgsVersionsSpecs, pkgsVersions):
+        """Given a new (possibly updated) set of pkgsVersionsSpecs, update the
+        avilable versions.
+        """
+
+        for (pkg, pkgVersionsSpecs) in pkgsVersionsSpecs.items():
+                if pkg not in self:
+                    self[pkg] = {}
+                sPkgVersionsDeps = self[pkg]
+
+                for (version, depsSpecs) in pkgVersionsSpecs.items():
+                    if version not in sPkgVersionsDeps:
+                        sPkgVersionsDeps[version] = {}
+                    sDepsVersions = sPkgVersionsDeps[version]
+
+                    for (dep, specs) in depsSpecs.items():
+                        if dep == root:
+                            continue
+                        if dep not in sDepsVersions:
+                            sDepsVersions[dep] = SortedSet()
+
+                        sDepsVersions[dep].update(
+                            filter_by_specs(specs, pkgsVersions[dep])
+                        )
+
+def filter_by_specs(specs, versions):
+    for version in versions:
+        if version_matches_specs(specs, version):
+            yield version
+
+def version_matches_specs(specs, version):
+    for spec in specs:
+        if not spec.match(version):
+            return False
+    return True
 
 class PkgsVersionDepsSet(PkgsVersionDepsMap):
     def new_function(self):
@@ -245,14 +285,14 @@ def retrieve_edge_versions(retrieve_fn, pkgEdges):
     }
 
 
-def State(object):
+class State(object):
     def __init__(self, pkgsVersionsDeps):
         self.pkgsVersionsDeps = pkgsVersionsDeps
         self.pkgsLocked = {
-            pkg: None for pkg in pkgsVersionDeps.keys()
+            pkg: None for pkg in pkgsVersionsDeps.keys()
         }
         self.failedVersions = {
-            pkg: set() for pkg in pkgsVersionDeps.keys()
+            pkg: set() for pkg in pkgsVersionsDeps.keys()
         }
 
     def attempt_pkg_traversal(self, pkg):
@@ -277,7 +317,7 @@ def State(object):
         raise NotSolved()
 
     def attempt_pkgVersion_traversal(self, pkg, pkgVersion):
-        depsVersions = pkgVersionsDeps[pkg][pkgVersion]
+        depsVersions = self.pkgsVersionsDeps[pkg][pkgVersion]
         lockedHere = []
 
         for dep, depVersions in depsVersions.items():
@@ -299,7 +339,7 @@ def State(object):
 
                 self.pkgsLocked[dep] = depVersion
                 try:
-                    attempt_pkg_traversal(dep)
+                    self.attempt_pkg_traversal(dep)
                     lockedHere.append(dep)
                     break
                 except NotSolved:
