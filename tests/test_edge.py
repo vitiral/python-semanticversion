@@ -137,6 +137,6 @@ class EdgesTestCase(unittest.TestCase):
         }
         edges = edge.initialize_edges(pkgsSpecs)
 
-        assert edges[pA][2, 3, 0][pB].reqs_lt == {R("<2.3.0")}
-        assert edges[pA][2, 3, 0][pB].reqs_gt == {R(">=1.0.0")}
+        assert edges[pA][V(2, 3, 0)][pB].reqs_lt == {R("<2.3.0")}
+        assert edges[pA][V(2, 3, 0)][pB].reqs_gt == {R(">=1.0.0")}
 

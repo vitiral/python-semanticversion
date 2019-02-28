@@ -85,7 +85,7 @@ class Edges(object):
             for req in reqOrSpec.requirements:
                 self.append(req)
             return
-        req = reqOrSpec
+        req = reqOrSpec.force_non_partial()
 
         # TODO: the "next patch" stuff here may want to preserve builds, etc in
         # some way??

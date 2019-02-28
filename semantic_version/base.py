@@ -85,6 +85,17 @@ class Version(object):
 
         self.partial = partial
 
+    def force_non_partial(self):
+        if self.partial:
+            return Version(
+                self.major, self.minor, self.patch,
+                self.prerelease or (),
+                self.build or (),
+                partial=False,
+            )
+        else:
+            return self
+
     @staticmethod
     def _coerce(value, allow_none=False):
         if value is None and allow_none:
@@ -455,6 +466,12 @@ class VersionReq(object):
             )
 
         return cls(kind, version)
+
+    def force_non_partial(self):
+        if self.version and self.version.partial:
+            return VersionReq(self.kind, self.version.force_non_partial())
+        else:
+            return self
 
     def match(self, version):
         if self.kind == self.KIND_ANY:
