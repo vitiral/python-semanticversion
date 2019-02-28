@@ -12,8 +12,8 @@ def parse_ex(version_req_str):
 
 # Some shorthands for the test setup
 V = base.Version
-Vp = base.Version.parse
-R = base.VersionReq.parse
+Vp = lambda v: base.Version.parse(v).force_non_partial()
+R = lambda r: base.VersionReq.parse(r).force_non_partial()
 S = base.Spec.from_str
 
 pA = "pkgA"
@@ -137,6 +137,6 @@ class EdgesTestCase(unittest.TestCase):
         }
         edges = edge.initialize_edges(pkgsSpecs)
 
-        assert edges[pA][V(2, 3, 0)][pB].reqs_lt == {R("<2.3.0")}
-        assert edges[pA][V(2, 3, 0)][pB].reqs_gt == {R(">=1.0.0")}
+        assert edges[pA][V(2, 3, 0)][pB].reqs_lt == {R("<2.0.0")}
+        assert edges[pA][V(2, 3, 0)][pB].reqs_gte == {R(">=1.0.0")}
 

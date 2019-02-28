@@ -1,3 +1,4 @@
+import itertools
 
 from . import base
 
@@ -28,7 +29,7 @@ class NotSolved(Exception):
 class EdgeLt(base.VersionReq):
     def __init__(self, version):
         self.kind = self.KIND_LT
-        self.version = version
+        self.version = version.force_non_partial()
 
     def __cmp__(self, other):
         assert isinstance(other, EdgeLt)
@@ -38,7 +39,7 @@ class EdgeLt(base.VersionReq):
 class EdgeGte(base.VersionReq):
     def __init__(self, version):
         self.kind = self.KIND_GTE
-        self.version = version
+        self.version = version.force_non_partial()
 
     def __cmp__(self, other):
         assert isinstance(other, EdgeGte)
@@ -144,6 +145,11 @@ class Edges(object):
 
         else:  # pragma: no cover
             raise ValueError('Unexpected match kind: %r' % kind)
+
+    def __repr__(self):
+        return "Edges({})".format(
+            ', '.join(str(r) for r in iter(self))
+        )
 
     def __iter__(self):
         return itertools.chain(
