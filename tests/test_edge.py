@@ -65,22 +65,22 @@ def get_pkg_edge_versions(db, pkg, edges):
     return versions
 
 
-def _get_pkg_edge(db, pkg, edge):
+def _get_pkg_edge(db, pkg, e):
     """Get pkg version which matches the edge from ``db``"""
     pkgVersions = db.get(pkg)
     if pkgVersions is None:
         return None
 
-    if isinstance(edge, edge.EdgeLt):
+    if isinstance(e, edge.EdgeLt):
         # go from highest -> lowest looking for match
         for version in reversed(pkgVersions):
-            if edge.match(version):
+            if e.match(version):
                 return version
 
-    elif isinstance(edge, edge.EdgeGt):
+    elif isinstance(e, edge.EdgeGte):
         # go from lowest -> highest looking for match
         for version in pkgVersions:
-            if edge.match(version):
+            if e.match(version):
                 return version
 
     return None
@@ -181,6 +181,9 @@ class EdgesTestCase(unittest.TestCase):
             my_retriever,
             edges)
 
-        assert not pkgVersions
+        assert pkgVersions == {
+            pB: {V(1, 0, 0), V(1, 2, 0)},
+            pE: {V(1, 0, 0), V(2, 9, 0)},
+        }
 
 
