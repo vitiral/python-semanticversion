@@ -257,17 +257,20 @@ class Version(object):
         return iter((self.major, self.minor, self.patch, self.prerelease, self.build))
 
     def __str__(self):
-        version = '%d' % self.major
+        version = [str(self.major)]
         if self.minor is not None:
-            version = '%s.%d' % (version, self.minor)
+            version.append('.')
+            version.append(str(self.minor))
         if self.patch is not None:
-            version = '%s.%d' % (version, self.patch)
-
+            version.append('.')
+            version.append(str(self.patch))
         if self.prerelease or (self.partial and self.prerelease == () and self.build is None):
-            version = '%s-%s' % (version, '.'.join(self.prerelease))
+            version.append('-')
+            version.append('.'.join(self.prerelease))
         if self.build or (self.partial and self.build == ()):
-            version = '%s+%s' % (version, '.'.join(self.build))
-        return version
+            version.append('+')
+            version.append('.'.join(self.build))
+        return ''.join(version)
 
     def __repr__(self):
         return '%s(%r%s)' % (
@@ -427,6 +430,7 @@ class VersionReq(object):
 
     @classmethod
     def parse(cls, requirement_string, partial=True):
+        requirement_string = requirement_string.strip();
         if not requirement_string:
             raise ValueError("Invalid empty requirement specification: %r" % requirement_string)
 
@@ -487,7 +491,7 @@ class VersionReq(object):
             raise ValueError('Unexpected match kind: %r' % self.kind)
 
     def __str__(self):
-        return '%s%s' % (self.kind, self.version)
+        return '{}{}'.format(self.kind, str(self.version))
 
     def __repr__(self):
         return '<VersionReq: %s %r>' % (self.kind, self.version)
@@ -546,7 +550,7 @@ class Spec(object):
         return ','.join(str(spec) for spec in self.requirements)
 
     def __repr__(self):
-        return '<Spec: %r>' % (self.requirements,)
+        return '<Spec: {}>'.format(str(self.requirements))
 
     def __eq__(self, other):
         if not isinstance(other, Spec):

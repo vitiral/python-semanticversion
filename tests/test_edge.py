@@ -1,5 +1,6 @@
 # Tests for solving edges
 from .compat import unittest
+from pprint import pprint as pp
 
 from semantic_version import base
 from semantic_version import edge
@@ -7,6 +8,52 @@ from semantic_version import edge
 def parse_ex(version_req_str):
     """Helper function to parse with partial=False."""
     return base.VersionReq.parse(version_req_str, partial=False)
+
+# Some shorthands for the test setup
+V = base.Version
+Vp = base.Version.parse
+S = base.Spec.from_str
+
+pA = "pkgA"
+pB = "pkgB"
+pC = "pkgC"
+pD = "pkgD"
+pE = "pkgE"
+pF = "pkgF"
+
+
+# Contains the "server" implementation (not the edges)"
+pkgsVersionsSpecsSimple = {
+    pA: {
+        V(2, 3, 0): {
+            pB: S("^1.0.0"),
+            pE: S(">=1.0, <3.0"),
+        },
+    },
+
+    pB: {
+        V(1, 0, 0): {
+            pE: S(">=1.2, <2.0"),
+        },
+
+        V(1, 1, 0): {
+            pE: S(">=1.0, <2.0"),
+        },
+
+        V(1, 2, 0): {
+            pE: S(">=1.5, <2.5"),
+        }
+    },
+
+    pE: {
+        V(mj, mn, 0): {}
+        for mj in range(1, 4)
+        for mn in range(0, 10)
+    },
+
+}
+
+pp(pkgsVersionsSpecsSimple)
 
 
 class EdgesTestCase(unittest.TestCase):
