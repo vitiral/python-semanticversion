@@ -54,19 +54,30 @@ pkgsVersionsSpecsSimple = {
     }),
 }
 
-def get_pkg_edge(db, pkg, edge):
+
+def get_pkg_edge_versions(db, pkg, edges):
+    versions = set()
+    for edge in edges:
+        v = _get_pkg_edge(db, pkg, edge)
+        if v is None:
+            continue
+        versions.add(v)
+    return versions
+
+
+def _get_pkg_edge(db, pkg, edge):
     """Get pkg version which matches the edge from ``db``"""
     pkgVersions = db.get(pkg)
     if pkgVersions is None:
         return None
 
-    if isinstance(edge, EdgeLt):
+    if isinstance(edge, edge.EdgeLt):
         # go from highest -> lowest looking for match
         for version in reversed(pkgVersions):
             if edge.match(version):
                 return version
 
-    elif isinstance(edge, EdgeGt):
+    elif isinstance(edge, edge.EdgeGt):
         # go from lowest -> highest looking for match
         for version in pkgVersions:
             if edge.match(version):
@@ -138,6 +149,38 @@ class EdgesTestCase(unittest.TestCase):
         edges = edge.PkgsEdges()
         edges.update(pkgsSpecs)
 
-        assert edges[pB].reqs_lt == {R("<2.0.0")}
-        assert edges[pB].reqs_gte == {R(">=1.0.0")}
+        for _ in range(2):
+            assert edges[pB].reqs_lt == {R("<2.0.0")}
+            assert edges[pB].reqs_gte == {R(">=1.0.0")}
+            edges.update(pkgsSpecs)  # no effect
+
+        pkgsSpecs = {
+            pA: {
+                V(1, 0, 0): {
+                    pB: [S("^0.5.0")],
+                }
+            }
+        }
+        edges.update(pkgsSpecs)
+        assert edges[pB].reqs_lt == {R("<0.6.0"), R("<2.0.0")}
+        assert edges[pB].reqs_gte == {R(">=0.5.0"), R(">=1.0.0")}
+
+    def test_retrieve_simple(self):
+        def my_retriever(pkg, edges):
+            return get_pkg_edge_versions(
+                pkgsVersionsSpecsSimple,
+                pkg, edges)
+
+        pkgsSpecs = {
+            pA: pkgsVersionsSpecsSimple[pA],
+        }
+        edges = edge.PkgsEdges()
+        edges.update(pkgsSpecs)
+
+        pkgVersions = edge.retrieve_edge_versions(
+            my_retriever,
+            edges)
+
+        assert not pkgVersions
+
 

@@ -160,7 +160,7 @@ class Edges(object):
             self.reqs_gte,
         )
 
-class PkgsVersionDepsMap(object):
+class PkgsVersionDepsMap(dict):
     """A dictionary tree representing `pkgs -> version -> dependencies -> container`.
 
     The container is typically `Edges` or an OrderedSet.
@@ -168,23 +168,17 @@ class PkgsVersionDepsMap(object):
     This is the common format for representing edges and (eventually) versions.
     """
 
-    def __init__(self):
-        self._map = {}
-
     def new_function(self):
         raise NotImplementedError()
 
     def extend_function(self, a):
         raise NotImplementedError()
 
-    def __getitem__(self, key):
-        return self._map[key]
-
     def update(self, pkgsVersionsMap):
         for (pkg, pkgVersionsMap) in pkgsVersionsMap.items():
-            if pkg not in self._map:
-                self._map[pkg] = {}
-            sPkgVersionsMap = self._map[pkg]
+            if pkg not in self:
+                self[pkg] = {}
+            sPkgVersionsMap = self[pkg]
 
             for (version, depsMap) in pkgVersionsMap.items():
                 if version not in sPkgVersionsMap:
@@ -216,13 +210,10 @@ class PkgsVersionDepsOrderedSet(PkgsVersionDepsMap):
 
 class PkgsEdges(PkgsVersionDepsMap):
     """For ingesting specs to create edges."""
-    def __int__(self):
-        self._map = {}
-
     def extend_specs(self, pkg, specs):
-        if pkg not in self._map:
-            self._map[pkg] = Edges()
-        self._map[pkg].extend(specs)
+        if pkg not in self:
+            self[pkg] = Edges()
+        self[pkg].extend(specs)
 
     def update(self, pkgsVersionsSpecs):
         """Consume a complex tree of specs to build out the edges."""
@@ -232,22 +223,26 @@ class PkgsEdges(PkgsVersionDepsMap):
                     self.extend_specs(dep, specs)
 
 
-class PkgsEdgeVersions(object):
+class PkgsEdgeVersions(dict):
     """Edge versions for specific pkgs.
 
     These are the versions the server has.
     """
-    def __init__(self):
-        self._map = {}
-
     def update(self, pkgsVersions):
         for pkg, versions in pkgsVersions.items():
             if pkg not in self_map:
-                self._map[pkg] = SortedSet()
-            self._map[pkg].update(versions)
+                self[pkg] = SortedSet()
+            self[pkg].update(versions)
 
-    def __getitem__(self, key):
-        return self._map[key]
+
+def retrieve_edge_versions(retrieve_fn, pkgEdges):
+    """Retrieve the edges from the server, returning
+    the versions.
+    """
+    return {
+        pkg: retrieve_fn(pkg, edges)
+        for (pkg, edges) in pkgEdges.items()
+    }
 
 
 def State(object):
