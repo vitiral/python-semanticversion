@@ -550,7 +550,7 @@ class Spec(object):
         return ','.join(str(spec) for spec in self.requirements)
 
     def __repr__(self):
-        return '<Spec: {}>'.format(','.join(str(r) for r in self.requirements))
+        return 'Spec({})'.format(','.join('"{}"'.format(r) for r in self.requirements))
 
     def __eq__(self, other):
         if not isinstance(other, Spec):

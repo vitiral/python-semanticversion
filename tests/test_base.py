@@ -596,7 +596,7 @@ class SpecTestCase(unittest.TestCase):
             self.assertEqual(specs, [str(spec) for spec in spec_list])
 
             for req_text in specs:
-                self.assertTrue(repr(base.VersionReq.parse(req_text)) in repr(spec_list))
+                self.assertTrue(str(base.VersionReq.parse(req_text)) in repr(spec_list))
 
     split_examples = {
         ('>=0.1.1', '<0.1.2', '!=0.1.1+build1'): ['>=0.1.1', '<0.1.2', '!=0.1.1+build1'],
@@ -612,7 +612,7 @@ class SpecTestCase(unittest.TestCase):
             self.assertEqual(spec_list, base.Spec.from_str(','.join(req_list_text)))
 
             for req_text in specs:
-                self.assertTrue(repr(base.VersionReq.parse(req_text)) in repr(spec_list))
+                self.assertTrue(str(base.VersionReq.parse(req_text)) in repr(spec_list))
 
     matches = {
         # At least 0.1.1 including pre-releases, less than 0.1.2 excluding pre-releases
