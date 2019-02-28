@@ -512,14 +512,6 @@ class VersionEdges(object):
     but rather to pass these constraints to a system which can return
     versions which match the requirements.
 
-    It is expected that when these edges are _retrieved_, the retriever (i.e.
-    server) must respond like so:
-    - VersionGte: must return the _exact version_. This represents a lower edge
-      and could equivalently have been VersionEq
-    - VersionLt: must return the version _directly below_ the version specified.
-      If that version has been yanked it must still be returned, but the server
-      has the option of returning additional version.
-
     When spec's are added, they are converted to their graph edge.  All KINDs
     are converted to one of Eq, LT or GTE
     - ANY is converted to ``>=0.0.1``

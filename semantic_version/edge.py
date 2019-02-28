@@ -42,7 +42,7 @@ def State(object):
 
     def attempt_pkgVersion_traversal(self, pkg, pkgVersion):
         depsVersions = pkgVersionsDeps[pkg][pkgVersion]
-
+        lockedHere = []
 
         for dep, depVersions in depsVersions.items():
             lockedDepVersion = self.pkgsLocked[dep]
@@ -57,7 +57,6 @@ def State(object):
                 else:
                     raise NotSolved()
 
-            lockedHere = []
             for depVersion in depVersions:
                 if depVersion in self.failedVersions[dep]:
                     continue
@@ -90,7 +89,6 @@ def State(object):
                 for dep in lockedHere:
                     self.pkgsLocked[dep] = None
                 raise NotSolved()
-
 
     def _handle_not_solved(self, pkg, pkgVersion):
         self.pkgsLocked[pkg] = None
