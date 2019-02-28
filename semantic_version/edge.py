@@ -333,7 +333,7 @@ class State(object):
                 else:
                     raise NotSolved()
 
-            for depVersion in depVersions:
+            for depVersion in reversed(depVersions):
                 if depVersion in self.failedVersions[dep]:
                     continue
 
