@@ -197,24 +197,57 @@ class PkgsVersionDepsMap(object):
                     self.extend_function(sPkgDepsMap[dep], specs)
 
 
-class PkgsVersionDepsEdges(PkgsVersionDepsMap):
+class PkgsVersionDepsSet(PkgsVersionDepsMap):
     def new_function(self):
-        return Edges()
+        return set()
 
-    def extend_function(self, edges, a):
-        Edges.extend(edges, a)
+    def extend_function(self, mySet, a):
+        set.update(mySet, a)
 
 
-class PkgsVersionDepsVersions(PkgsVersionDepsMap):
-    def __init__(self):
-        super(SortedSet.__init__, extend)
 
+class PkgsVersionDepsOrderedSet(PkgsVersionDepsMap):
     def new_function(self):
         return SortedSet()
 
     def extend_function(self, sortedSet, a):
-        next((sortedSet.add(v) for v in a), None)
+        SortedSet.update(sortedSet, a)
 
+
+class PkgsEdges(PkgsVersionDepsMap):
+    """For ingesting specs to create edges."""
+    def __int__(self):
+        self._map = {}
+
+    def extend_specs(self, pkg, specs):
+        if pkg not in self._map:
+            self._map[pkg] = Edges()
+        self._map[pkg].extend(specs)
+
+    def update(self, pkgsVersionsSpecs):
+        """Consume a complex tree of specs to build out the edges."""
+        for (pkg, pkgVersionsSpecs) in pkgsVersionsSpecs.items():
+            for (version, depsSpecs) in pkgVersionsSpecs.items():
+                for (dep, specs) in depsSpecs.items():
+                    self.extend_specs(dep, specs)
+
+
+class PkgsEdgeVersions(object):
+    """Edge versions for specific pkgs.
+
+    These are the versions the server has.
+    """
+    def __init__(self):
+        self._map = {}
+
+    def update(self, pkgsVersions):
+        for pkg, versions in pkgsVersions.items():
+            if pkg not in self_map:
+                self._map[pkg] = SortedSet()
+            self._map[pkg].update(versions)
+
+    def __getitem__(self, key):
+        return self._map[key]
 
 
 def State(object):

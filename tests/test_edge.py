@@ -28,22 +28,22 @@ pF = "pkgF"
 pkgsVersionsSpecsSimple = {
     pA: SortedDict({
         V(2, 3, 0): {
-            pB: S("^1.0.0"),
-            pE: S(">=1.0.0, <3.0.0"),
+            pB: [S("^1.0.0")],
+            pE: [S(">=1.0.0, <3.0.0")],
         },
     }),
 
     pB: SortedDict({
         V(1, 0, 0): {
-            pE: S(">=1.2.0, <2.0.0"),
+            pE: [S(">=1.2.0, <2.0.0")],
         },
 
         V(1, 1, 0): {
-            pE: S(">=1.0.0, <2.0.0"),
+            pE: [S(">=1.0.0, <2.0.0")],
         },
 
         V(1, 2, 0): {
-            pE: S(">=1.5.0, <2.5.0"),
+            pE: [S(">=1.5.0, <2.5.0")],
         }
     }),
 
@@ -135,9 +135,9 @@ class EdgesTestCase(unittest.TestCase):
         pkgsSpecs = {
             pA: pkgsVersionsSpecsSimple[pA],
         }
-        edges = edge.PkgsVersionDepsEdges()
+        edges = edge.PkgsEdges()
         edges.update(pkgsSpecs)
 
-        assert edges[pA][V(2, 3, 0)][pB].reqs_lt == {R("<2.0.0")}
-        assert edges[pA][V(2, 3, 0)][pB].reqs_gte == {R(">=1.0.0")}
+        assert edges[pB].reqs_lt == {R("<2.0.0")}
+        assert edges[pB].reqs_gte == {R(">=1.0.0")}
 
